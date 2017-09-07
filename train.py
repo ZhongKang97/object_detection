@@ -44,7 +44,7 @@ def adjust_learning_rate(optimizer, step):
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_no_pretrain/', help='Location to save checkpoint models')
+parser.add_argument('--save_folder', default='renew_default/', help='Location to save checkpoint models')
 
 # training config
 parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
@@ -203,7 +203,7 @@ def train():
         t1 = time.time()
 
         # jot down the loss
-        if iteration % 5 == 0:
+        if iteration % 50 == 0:
 
             msg = 'iter %d || Loss: %.4f || time: %.4f sec/iter' % (iteration, loss.data[0], (t1 - t0))
             print(msg)
@@ -215,7 +215,7 @@ def train():
                 vis.image(images.data[random_batch_index].cpu().numpy())
 
         # save results
-        if iteration % 10 == 0:
+        if iteration % 5000 == 0:
             print('Saving state, iter:', iteration)
             torch.save({
                 'state_dict': ssd_net.state_dict(),
