@@ -44,16 +44,16 @@ def adjust_learning_rate(optimizer, step):
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_no_pretrain_debug/', help='Location to save checkpoint models')
+parser.add_argument('--save_folder', default='renew_no_pretrain/', help='Location to save checkpoint models')
 
 # training config
 parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
 parser.add_argument('--no_pretrain', action='store_true', help='default is using pretrain')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
-# parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
-parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
+parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
+# parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
 
-parser.add_argument('--batch_size', default=16, type=int, help='Batch size for training')
+parser.add_argument('--batch_size', default=32, type=int, help='Batch size for training')
 parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float, help='initial learning rate')
 parser.add_argument('--schedule', default=[80000, 100000, 120000], type=float)
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
