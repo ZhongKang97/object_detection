@@ -5,7 +5,7 @@ from torch.autograd import Variable
 from layers import *
 from data import v2
 import os
-
+import collections
 
 class SSD(nn.Module):
     """Single Shot Multibox Architecture
@@ -109,10 +109,14 @@ class SSD(nn.Module):
         return output
 
     def load_weights(self, base_file):
+        # it is only used for resuming
         other, ext = os.path.splitext(base_file)
         if ext == '.pkl' or '.pth':
             print('Loading weights into state dict...')
-            self.load_state_dict(torch.load(base_file, map_location=lambda storage, loc: storage))
+            # self.load_state_dict(torch.load(base_file, map_location=lambda storage, loc: storage))
+            weights = torch.load(base_file, map_location=lambda storage, loc: storage)
+            weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
+            self.load_state_dict(weights_new)
             print('Finished!')
         else:
             print('Sorry only .pth and .pkl files supported.')
