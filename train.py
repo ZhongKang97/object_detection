@@ -49,7 +49,7 @@ parser.add_argument('--phase', default='train')
 parser.add_argument('--no_pretrain', action='store_false')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
 parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
-parser.add_argument('--batch_size', default=16, type=int, help='Batch size for training')
+parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
 parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--iterations', default=120000, type=int, help='Number of training iterations')
@@ -60,13 +60,14 @@ parser.add_argument('--lr', '--learning-rate', default=1e-4, type=float, help='i
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
 parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for SGD')
-parser.add_argument('--log_iters', default=True, type=bool, help='Print the loss at each iteration')
+# parser.add_argument('--log_iters', default=True, type=bool, help='Print the loss at each iteration')
+
 parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port_id', default=8097, type=int)
 parser.add_argument('--display_id', default=1, type=int)
-
 parser.add_argument('--send_images_to_visdom', type=str2bool, default=False, help='Sample a random image from each 10th batch, send it to visdom after augmentations step')
-parser.add_argument('--save_folder', default='renew_default/', help='Location to save checkpoint models')     # weights/
+
+parser.add_argument('--save_folder', default='renew_no_pretrain/', help='Location to save checkpoint models')     # weights/
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 parser.add_argument('--ssd_dim', default=300, type=int)
 args = parser.parse_args()
@@ -79,6 +80,7 @@ else:
     torch.set_default_tensor_type('torch.FloatTensor')
 
 if args.visdom:
+    # TODO
     import visdom
     vis = visdom.Visdom(port=args.port_id)
 
@@ -131,7 +133,7 @@ else:
 
 if args.cuda:
     # TODO check here
-    torch.cuda.set_device(args.gpu_id[0])
+    # torch.cuda.set_device(args.gpu_id[0])
     if len(args.gpu_id) > 1:
         ssd_net = torch.nn.DataParallel(ssd_net, device_ids=args.gpu_id).cuda()
     else:
