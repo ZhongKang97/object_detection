@@ -44,13 +44,13 @@ def adjust_learning_rate(optimizer, step):
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_no_pretrain_debug/', help='Location to save checkpoint models')
+parser.add_argument('--save_folder', default='renew_no_pretrain/', help='Location to save checkpoint models')
 
 # training config
-parser.add_argument('--no_pretrain', action='store_true', help='default is using pretrain')
+parser.add_argument('--no_pretrain', action='store_false', help='default is using pretrain')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
-# parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
-parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
+parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
+# parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
 parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
 
 parser.add_argument('--batch_size', default=16, type=int, help='Batch size for training')
@@ -68,7 +68,7 @@ parser.add_argument('--ssd_dim', default=300, type=int)
 # runtime config
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
-parser.add_argument('--gpu_id', default='0,1', type=str, help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+parser.add_argument('--gpu_id', default='2,3', type=str, help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
 
 parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port_id', default=8097, type=int)
@@ -82,7 +82,7 @@ if args.resume:
     args.resume = args.save_folder + '/' + args.resume + '.pth'
 
 if args.cuda and torch.cuda.is_available():
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
+    # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
