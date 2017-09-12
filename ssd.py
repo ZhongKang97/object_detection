@@ -6,6 +6,8 @@ from layers import *
 from data import v2
 import os
 import collections
+import utils.util as util
+
 
 class SSD(nn.Module):
     """Single Shot Multibox Architecture
@@ -24,7 +26,7 @@ class SSD(nn.Module):
         head: "multibox head" consists of loc and conf conv layers
     """
 
-    def __init__(self, phase, num_classes, base, extras, head):
+    def __init__(self, opts, phase, num_classes, base, extras, head):
         super(SSD, self).__init__()
         self.phase = phase
         self.num_classes = num_classes
@@ -32,6 +34,7 @@ class SSD(nn.Module):
         self.priorbox = PriorBox(v2)
         self.priors = Variable(self.priorbox.forward(), volatile=True)
         self.size = 300
+        self.opts = opts
 
         # SSD network
         self.vgg = nn.ModuleList(base)
@@ -109,7 +112,7 @@ class SSD(nn.Module):
         return output
 
     def load_weights(self, base_file):
-        # it is only used for resuming
+        # DEPRECATED
         other, ext = os.path.splitext(base_file)
         if ext == '.pkl' or '.pth':
             print('Loading weights into state dict...')
@@ -120,6 +123,35 @@ class SSD(nn.Module):
             print('Finished!')
         else:
             print('Sorry only .pth and .pkl files supported.')
+
+    def load_weight_new(self):
+        if self.opts.resume:
+            if os.path.isfile(self.opts.resume):
+                print(("=> loading checkpoint '{}'".format(self.opts.resume)))
+                checkpoint = torch.load(self.opts.resume)
+                self.opts.start_iter = checkpoint['iteration']
+                weights = checkpoint['state_dict']
+                try:
+                    self.load_state_dict(weights)
+                except KeyError:
+                    weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
+                    self.load_state_dict(weights_new)
+            else:
+                print(("=> no checkpoint found at '{}'".format(self.opts.resume)))
+        else:
+            self.opts.start_iter = 0
+            if self.opts.no_pretrain:
+                print('Train from scratch...')
+                self.apply(util.weights_init)
+            else:
+                vgg_weights = torch.load('data/pretrain/' + self.opts.basenet)
+                print('Loading base network...')
+                self.vgg.load_state_dict(vgg_weights)
+                print('Initializing weights of the newly added layers...')
+                # initialize newly added layers' weights with xavier method
+                self.extras.apply(util.weights_init)
+                self.loc.apply(util.weights_init)
+                self.conf.apply(util.weights_init)
 
 
 # This function is derived from torchvision VGG make_layers()
@@ -197,7 +229,7 @@ mbox = {
 }
 
 
-def build_ssd(phase, size=300, num_classes=21):
+def build_ssd(opts, phase, size=300, num_classes=21):
     if phase != "test" and phase != "train":
         print("Error: Phase not recognized")
         return
@@ -205,6 +237,6 @@ def build_ssd(phase, size=300, num_classes=21):
     #     print("Error: Sorry only SSD300 is supported currently!")
     #     return
 
-    return SSD(phase, num_classes, *multibox(vgg(base[str(size)], 3),
-                                             add_extras(extras[str(size)], 1024),
-                                             mbox[str(size)], num_classes))
+    return SSD(opts, phase, num_classes, *multibox(vgg(base[str(size)], 3),
+                                                   add_extras(extras[str(size)], 1024),
+                                                   mbox[str(size)], num_classes))
