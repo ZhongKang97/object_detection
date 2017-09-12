@@ -32,7 +32,7 @@ def str2bool(v):
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 
-parser.add_argument('--experiment_name', default='renew_no_pretrain', type=str, help='should be identical to that of train')
+parser.add_argument('--experiment_name', default='renew_default', type=str, help='should be identical to that of train')
 parser.add_argument('--trained_model', default='final_v2.pth', type=str)
 parser.add_argument('--phase', default='test', type=str)
 
