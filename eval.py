@@ -3,16 +3,12 @@
     @rbgirshick py-faster-rcnn https://github.com/rbgirshick/py-faster-rcnn
     Licensed under The MIT License [see LICENSE for details]
 """
-
 from __future__ import print_function
 import torch
-import torch.nn as nn
 import torch.backends.cudnn as cudnn
-import torchvision.transforms as transforms
 from torch.autograd import Variable
 from data import VOCroot
 from data import VOC_CLASSES as labelmap
-import torch.utils.data as data
 
 from data import AnnotationTransform, VOCDetection, BaseTransform, VOC_CLASSES
 from ssd import build_ssd
@@ -23,21 +19,23 @@ import time
 import argparse
 import numpy as np
 import pickle
-import cv2
+import collections
 
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
 else:
     import xml.etree.ElementTree as ET
 
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
-parser.add_argument('--trained_model', default='weights/ssd300_0712_iter_105000.pth',
-                    type=str, help='Trained state_dict file path to open')
-parser.add_argument('--save_folder', default='eval/', type=str,
-                    help='File path to save results')
+
+parser.add_argument('--experiment_name', default='renew_no_pretrain', type=str, help='should be identical to that of train')
+parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--phase', default='test', type=str)
+
 parser.add_argument('--confidence_threshold', default=0.01, type=float,
                     help='Detection confidence threshold')
 parser.add_argument('--top_k', default=5, type=int,
@@ -45,8 +43,9 @@ parser.add_argument('--top_k', default=5, type=int,
 parser.add_argument('--cuda', default=True, type=str2bool,
                     help='Use cuda to train model')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
-
 args = parser.parse_args()
+args.save_folder = 'result/' + args.experiment_name + '/' + args.phase + '/'
+args.trained_model = 'result/' + args.experiment_name + '/train/' + args.trained_model
 
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
@@ -213,13 +212,7 @@ def voc_ap(rec, prec, use_07_metric=True):
     return ap
 
 
-def voc_eval(detpath,
-             annopath,
-             imagesetfile,
-             classname,
-             cachedir,
-             ovthresh=0.5,
-             use_07_metric=True):
+def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh=0.5, use_07_metric=True):
     """rec, prec, ap = voc_eval(detpath,
                            annopath,
                            imagesetfile,
@@ -410,8 +403,13 @@ if __name__ == '__main__':
     # load net
     num_classes = len(VOC_CLASSES) + 1 # +1 background
     net = build_ssd('test', 300, num_classes) # initialize SSD
-    net.load_state_dict(torch.load(args.trained_model))
-    net.eval()
+    checkpoint = torch.load(args.trained_model)
+    try:
+        net.load_state_dict(checkpoint['state_dict'])
+    except KeyError:
+        weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
+        net.load_state_dict(weights)
+    # net.eval()
     print('Finished loading model!')
     # load data
     dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(300, dataset_mean), AnnotationTransform())

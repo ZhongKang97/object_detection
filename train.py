@@ -44,7 +44,7 @@ def adjust_learning_rate(optimizer, step):
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_default/', help='Location to save checkpoint models')
+parser.add_argument('--save_folder', default='renew_ssd512_default/', help='Location to save checkpoint models')
 
 # training config
 parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
@@ -63,7 +63,7 @@ parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for S
 # model params
 parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
-parser.add_argument('--ssd_dim', default=300, type=int)
+parser.add_argument('--ssd_dim', default=512, type=int)
 
 # runtime config
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
