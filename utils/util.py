@@ -1,11 +1,12 @@
 from __future__ import print_function
 import torch
-import numpy as np
 from PIL import Image
-import inspect, re
+import inspect
+import re
 import numpy as np
 import os
 import collections
+import torch.nn as nn
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
@@ -80,3 +81,8 @@ def _process(ids):
             gpu_ids.append(id)
     return gpu_ids
 
+
+def weights_init(m):
+    if isinstance(m, nn.Conv2d):
+        nn.init.xavier_normal(m.weight.data)
+        m.bias.data.zero_()

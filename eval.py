@@ -12,6 +12,7 @@ from data import VOC_CLASSES as labelmap
 
 from data import AnnotationTransform, VOCDetection, BaseTransform, VOC_CLASSES
 from ssd import build_ssd
+import utils.util as util
 
 import sys
 import os
@@ -30,38 +31,6 @@ else:
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
-
-parser.add_argument('--experiment_name', default='renew_no_pretrain', type=str, help='should be identical to that of train')
-parser.add_argument('--trained_model', default='final_v2.pth', type=str)
-parser.add_argument('--phase', default='test', type=str)
-
-parser.add_argument('--confidence_threshold', default=0.01, type=float,
-                    help='Detection confidence threshold')
-parser.add_argument('--top_k', default=5, type=int,
-                    help='Further restrict the number of predictions to parse')
-parser.add_argument('--cuda', default=True, type=str2bool,
-                    help='Use cuda to train model')
-parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
-args = parser.parse_args()
-args.save_folder = 'result/' + args.experiment_name + '/' + args.phase + '/'
-args.trained_model = 'result/' + args.experiment_name + '/train/' + args.trained_model
-
-if not os.path.exists(args.save_folder):
-    os.mkdir(args.save_folder)
-
-if args.cuda and torch.cuda.is_available():
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-    torch.set_default_tensor_type('torch.FloatTensor')
-
-annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
-imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
-imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets', 'Main', '{:s}.txt')
-YEAR = '2007'
-devkit_path = VOCroot + 'VOC' + YEAR
-dataset_mean = (104, 117, 123)
-set_type = 'test'
 
 class Timer(object):
     """A simple timer."""
@@ -109,6 +78,7 @@ def parse_rec(filename):
 
 
 def get_output_dir(name, phase):
+    # DEPRECATED
     """Return the directory where experimental artifacts are placed.
     If the directory does not exist, it is created.
     A canonical path is built using the name from an imdb and a network
@@ -121,13 +91,43 @@ def get_output_dir(name, phase):
 
 
 def get_voc_results_file_template(image_set, cls):
-    # VOCdevkit/VOC2007/results/det_test_aeroplane.txt
+
     filename = 'det_' + image_set + '_%s.txt' % (cls)
-    filedir = os.path.join(devkit_path, 'results')
+    filedir = os.path.join(args.save_folder, 'detection_per_cls')
     if not os.path.exists(filedir):
         os.makedirs(filedir)
+    # path = result/EXPERIMENT_NAME/test/detection_per_cls/det_test_XXX_CLS.txt
     path = os.path.join(filedir, filename)
     return path
+
+
+parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
+parser.add_argument('--experiment_name', default='renew_no_pretrain', type=str, help='should be identical to that of train')
+parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--phase', default='test', type=str)
+
+parser.add_argument('--ssd_dim', default=300, type=int)
+parser.add_argument('--confidence_threshold', default=0.01, type=float, help='Detection confidence threshold')
+parser.add_argument('--top_k', default=5, type=int, help='Further restrict the number of predictions to parse')
+parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
+parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
+args = parser.parse_args()
+args.save_folder = 'result/' + args.experiment_name + '/' + args.phase + '/'
+args.trained_model = 'result/' + args.experiment_name + '/train/' + args.trained_model
+
+if not os.path.exists(args.save_folder):
+    os.mkdir(args.save_folder)
+
+if args.cuda and torch.cuda.is_available():
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+else:
+    torch.set_default_tensor_type('torch.FloatTensor')
+
+annopath = os.path.join(args.voc_root, 'VOC2007', 'Annotations', '%s.xml')
+imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
+imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets', 'Main', '{:s}.txt')
+dataset_mean = (104, 117, 123)
+set_type = args.phase
 
 
 def write_voc_results_file(all_boxes, dataset):
@@ -147,23 +147,29 @@ def write_voc_results_file(all_boxes, dataset):
                                    dets[k, 2] + 1, dets[k, 3] + 1))
 
 
-def do_python_eval(output_dir='output', use_07=True):
+def do_python_eval(prefix='output', use_07=True):
+
+    YEAR = '2007'
+    devkit_path = VOCroot + 'VOC' + YEAR
     cachedir = os.path.join(devkit_path, 'annotations_cache')
-    aps = []
-    # The PASCAL VOC metric changed in 2010
-    use_07_metric = use_07
-    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+    output_dir = os.path.join(prefix, 'pr_curve_per_cls')
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
+
+    use_07_metric = use_07
+    print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+
+    aps = []
     for i, cls in enumerate(labelmap):
         filename = get_voc_results_file_template(set_type, cls)
         rec, prec, ap = voc_eval(
-           filename, annopath, imgsetpath.format(set_type), cls, cachedir,
-           ovthresh=0.5, use_07_metric=use_07_metric)
+            filename, annopath, imgsetpath.format(set_type), cls, cachedir,
+            ovthresh=0.5, use_07_metric=use_07_metric)
         aps += [ap]
         print('AP for {} = {:.4f}'.format(cls, ap))
         with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
             pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
+
     print('Mean AP = {:.4f}'.format(np.mean(aps)))
     print('~~~~~~~~')
     print('Results:')
@@ -178,64 +184,22 @@ def do_python_eval(output_dir='output', use_07=True):
     print('--------------------------------------------------------------')
 
 
-def voc_ap(rec, prec, use_07_metric=True):
-    """ ap = voc_ap(rec, prec, [use_07_metric])
-    Compute VOC AP given precision and recall.
-    If use_07_metric is true, uses the
-    VOC 07 11 point method (default:False).
-    """
-    if use_07_metric:
-        # 11 point metric
-        ap = 0.
-        for t in np.arange(0., 1.1, 0.1):
-            if np.sum(rec >= t) == 0:
-                p = 0
-            else:
-                p = np.max(prec[rec >= t])
-            ap = ap + p / 11.
-    else:
-        # correct AP calculation
-        # first append sentinel values at the end
-        mrec = np.concatenate(([0.], rec, [1.]))
-        mpre = np.concatenate(([0.], prec, [0.]))
-
-        # compute the precision envelope
-        for i in range(mpre.size - 1, 0, -1):
-            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
-
-        # to calculate area under PR curve, look for points
-        # where X axis (recall) changes value
-        i = np.where(mrec[1:] != mrec[:-1])[0]
-
-        # and sum (\Delta recall) * prec
-        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
-    return ap
-
-
 def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh=0.5, use_07_metric=True):
-    """rec, prec, ap = voc_eval(detpath,
-                           annopath,
-                           imagesetfile,
-                           classname,
-                           [ovthresh],
-                           [use_07_metric])
-Top level function that does the PASCAL VOC evaluation.
-detpath: Path to detections
-   detpath.format(classname) should produce the detection results file.
-annopath: Path to annotations
-   annopath.format(imagename) should be the xml annotations file.
-imagesetfile: Text file containing the list of images, one image per line.
-classname: Category name (duh)
-cachedir: Directory for caching the annotations
-[ovthresh]: Overlap threshold (default = 0.5)
-[use_07_metric]: Whether to use VOC07's 11 point AP computation
-   (default False)
-"""
-# assumes detections are in detpath.format(classname)
-# assumes annotations are in annopath.format(imagename)
-# assumes imagesetfile is a text file with each line an image name
-# cachedir caches the annotations in a pickle file
-# first load gt
+    """
+    Top level function that does the PASCAL VOC evaluation.
+    detpath:            Path to detections, detpath.format(classname) should produce the detection results file.
+    annopath:           Path to annotations, annopath.format(imagename) should be the xml annotations file.
+    imagesetfile:       Text file containing the list of images, one image per line.
+    classname:          Category name (duh)
+    cachedir:           Directory for caching the annotations
+    [ovthresh]:         Overlap threshold (default = 0.5)
+    [use_07_metric]:    Whether to use VOC07's 11 point AP computation (default False)
+    """
+    # assumes detections are in detpath.format(classname)
+    # assumes annotations are in annopath.format(imagename)
+    # assumes imagesetfile is a text file with each line an image name
+    # cachedir caches the annotations in a pickle file
+    # first load gt
     if not os.path.isdir(cachedir):
         os.mkdir(cachedir)
     cachefile = os.path.join(cachedir, 'annots.pkl')
@@ -342,10 +306,44 @@ cachedir: Directory for caching the annotations
     return rec, prec, ap
 
 
-def test_net(save_folder, net, cuda, dataset, transform, top_k,
-             im_size=300, thresh=0.05):
-    """Test a Fast R-CNN network on an image database."""
+def voc_ap(rec, prec, use_07_metric=True):
+    """ ap = voc_ap(rec, prec, [use_07_metric])
+    Compute VOC AP given precision and recall.
+    If use_07_metric is true, uses the
+    VOC 07 11 point method (default:False).
+    """
+    if use_07_metric:
+        # 11 point metric
+        ap = 0.
+        for t in np.arange(0., 1.1, 0.1):
+            if np.sum(rec >= t) == 0:
+                p = 0
+            else:
+                p = np.max(prec[rec >= t])
+            ap = ap + p / 11.
+    else:
+        # correct AP calculation
+        # first append sentinel values at the end
+        mrec = np.concatenate(([0.], rec, [1.]))
+        mpre = np.concatenate(([0.], prec, [0.]))
+
+        # compute the precision envelope
+        for i in range(mpre.size - 1, 0, -1):
+            mpre[i - 1] = np.maximum(mpre[i - 1], mpre[i])
+
+        # to calculate area under PR curve, look for points
+        # where X axis (recall) changes value
+        i = np.where(mrec[1:] != mrec[:-1])[0]
+
+        # and sum (\Delta recall) * prec
+        ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
+    return ap
+
+
+def test_net(net, dataset):
+
     num_images = len(dataset)
+    # num_images = 10     # for debug
     # all detections are collected into:
     #    all_boxes[cls][image] = N x 5 array of detections in
     #    (x1, y1, x2, y2, score)
@@ -354,9 +352,11 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
 
     # timers
     _t = {'im_detect': Timer(), 'misc': Timer()}
-    output_dir = get_output_dir('ssd300_120000', set_type)
-    det_file = os.path.join(output_dir, 'detections.pkl')
+    output_dir = args.save_folder
+    util.mkdirs(args.save_folder)
+    det_file = os.path.join(output_dir, 'detections_all_boxes.pkl')
 
+    # TODO: if all_boxes file exist, skip the following
     for i in range(num_images):
         im, gt, h, w = dataset.pull_item(i)
 
@@ -391,25 +391,19 @@ def test_net(save_folder, net, cuda, dataset, transform, top_k,
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
     print('Evaluating detections')
-    evaluate_detections(all_boxes, output_dir, dataset)
-
-
-def evaluate_detections(box_list, output_dir, dataset):
-    write_voc_results_file(box_list, dataset)
+    # write_voc_results_file(all_boxes, dataset)
     do_python_eval(output_dir)
-
 
 if __name__ == '__main__':
     # load net
-    num_classes = len(VOC_CLASSES) + 1 # +1 background
-    net = build_ssd('test', 300, num_classes) # initialize SSD
+    num_classes = len(VOC_CLASSES) + 1
+    net = build_ssd(args, args.phase, args.ssd_dim, num_classes)
     checkpoint = torch.load(args.trained_model)
     try:
         net.load_state_dict(checkpoint['state_dict'])
     except KeyError:
         weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
         net.load_state_dict(weights)
-    # net.eval()
     print('Finished loading model!')
     # load data
     dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(300, dataset_mean), AnnotationTransform())
@@ -417,6 +411,4 @@ if __name__ == '__main__':
         net = net.cuda()
         cudnn.benchmark = True
     # evaluation
-    test_net(args.save_folder, net, args.cuda, dataset,
-             BaseTransform(net.size, dataset_mean), args.top_k, 300,
-             thresh=args.confidence_threshold)
+    test_net(net, dataset)
