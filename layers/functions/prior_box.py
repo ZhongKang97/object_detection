@@ -2,19 +2,18 @@ import torch
 from math import sqrt as sqrt
 from itertools import product as product
 
+
 class PriorBox(object):
-    """Compute priorbox coordinates in center-offset form for each source
+    """Compute prior box coordinates in center-offset form for each source
     feature map.
     Note:
     This 'layer' has changed between versions of the original SSD
     paper, so we include both versions, but note v2 is the most tested and most
     recent version of the paper.
-
     """
     def __init__(self, cfg):
         super(PriorBox, self).__init__()
-        # self.type = cfg.name
-        self.image_size = cfg['min_dim']
+        self.image_size = cfg['image_size']
         # number of priors for feature map location (either 4 or 6)
         self.num_priors = len(cfg['aspect_ratios'])
         self.variance = cfg['variance'] or [0.1]

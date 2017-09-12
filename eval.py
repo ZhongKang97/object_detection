@@ -103,12 +103,13 @@ def get_voc_results_file_template(image_set, cls):
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--experiment_name', default='renew_default', type=str, help='should be identical to that of train')
-parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
+# parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
+parser.add_argument('--trained_model', default='final_v2.pth', type=str)
 parser.add_argument('--phase', default='test', type=str)
 
 parser.add_argument('--ssd_dim', default=300, type=int)
-parser.add_argument('--confidence_threshold', default=0.01, type=float, help='Detection confidence threshold')
-parser.add_argument('--top_k', default=5, type=int, help='Further restrict the number of predictions to parse')
+# parser.add_argument('--confidence_threshold', default=0.01, type=float, help='Detection confidence threshold')
+# parser.add_argument('--top_k', default=5, type=int, help='Further restrict the number of predictions to parse')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 args = parser.parse_args()

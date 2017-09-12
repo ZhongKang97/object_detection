@@ -44,7 +44,7 @@ class MultiBoxLoss(nn.Module):
         self.neg_overlap = neg_overlap
         self.variance = cfg['variance']
 
-    def forward(self, predictions, targets):
+    def forward(self, predictions, targets, debug):
         """Multibox Loss
         Args:
             predictions (tuple): A tuple containing loc preds, conf preds,
@@ -57,10 +57,12 @@ class MultiBoxLoss(nn.Module):
                 shape: [batch_size,num_objs,5] (last idx is the label).
         """
         loc_data, conf_data, priors = predictions
+        if debug:
+            assert loc_data.size(1) == priors.size(0), 'loc data vs prior SIZE MISMATCH'
+
         num = loc_data.size(0)
-        priors = priors[:loc_data.size(1), :]
+        priors = priors[:loc_data.size(1), :]   # TODO: I guess it is the multi-gpu thing
         num_priors = (priors.size(0))
-        num_classes = self.num_classes
 
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
@@ -110,7 +112,6 @@ class MultiBoxLoss(nn.Module):
         loss_c = F.cross_entropy(conf_p, targets_weighted, size_average=False)
 
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + αLloc(x,l,g)) / N
-
         N = num_pos.data.sum()
         loss_l /= N
         loss_c /= N

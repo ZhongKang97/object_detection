@@ -13,7 +13,7 @@ from data import AnnotationTransform, VOCDetection, detection_collate, VOCroot, 
 from utils.augmentations import SSDAugmentation
 import utils.util as util
 from layers.modules import MultiBoxLoss
-from ssd import build_ssd
+from ssd import build_ssd           # this is a function
 from option.train_opt import args
 
 
@@ -62,12 +62,28 @@ with open(log_file_name, 'wt') as log_file:
 # only shown in console
 print('dataset path: %s' % VOCroot)
 
-if args.cuda:
+if args.cuda & ~args.debug:
     ssd_net = torch.nn.DataParallel(ssd_net).cuda()
     cudnn.benchmark = True
 
+if args.debug:
+    loss_freq, save_freq = 1, 5
+else:
+    loss_freq, save_freq = 50, 5000
 
-def train():
+
+def adjust_learning_rate(optimizer, step):
+    """Sets the learning rate to the initial LR decayed by 10 at every specified step
+    # Adapted from PyTorch Imagenet example:
+    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    """
+    decay = args.gamma ** (sum(step >= np.array(args.schedule)))
+    lr = args.lr * decay
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
+def train(debug=False):
 
     print('Loading Dataset...')
     dataset = VOCDetection(args.voc_root, train_sets, SSDAugmentation(
@@ -100,14 +116,14 @@ def train():
         out = ssd_net(images)
         # backward
         optimizer.zero_grad()
-        loss_l, loss_c = criterion(out, targets)
+        loss_l, loss_c = criterion(out, targets, debug)
         loss = loss_l + loss_c
         loss.backward()
         optimizer.step()
         t1 = time.time()
 
         # jot down the loss
-        if iteration % 50 == 0:
+        if iteration % loss_freq == 0:
 
             msg = 'iter %d || Loss: %.4f || time: %.4f sec/iter' % (iteration, loss.data[0], (t1 - t0))
             print(msg)
@@ -119,7 +135,7 @@ def train():
                 vis.image(images.data[random_batch_index].cpu().numpy())
 
         # save results
-        if iteration % 5000 == 0:
+        if iteration % save_freq == 0:
             print('Saving state, iter:', iteration)
             torch.save({
                 'state_dict': ssd_net.state_dict(),
@@ -134,15 +150,4 @@ def train():
 
 
 if __name__ == '__main__':
-    train()
-
-
-def adjust_learning_rate(optimizer, step):
-    """Sets the learning rate to the initial LR decayed by 10 at every specified step
-    # Adapted from PyTorch Imagenet example:
-    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
-    """
-    decay = args.gamma ** (sum(step >= np.array(args.schedule)))
-    lr = args.lr * decay
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+    train(args.debug)
