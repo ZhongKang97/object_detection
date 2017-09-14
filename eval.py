@@ -102,13 +102,13 @@ def get_voc_results_file_template(image_set, cls):
 
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
-parser.add_argument('--experiment_name', default='renew_default', type=str, help='should be identical to that of train')
+parser.add_argument('--experiment_name', default='renew_ssd512_default', type=str, help='should be identical to that of train')
 # parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
 parser.add_argument('--trained_model', default='final_v2.pth', type=str)
 parser.add_argument('--phase', default='test', type=str)
 
-parser.add_argument('--ssd_dim', default=300, type=int)
-parser.add_argument('--conf_thresh', default=0.01, type=float, help='Detection confidence threshold')
+parser.add_argument('--ssd_dim', default=512, type=int)
+parser.add_argument('--conf_thresh', default=0.005, type=float, help='Detection confidence threshold')
 parser.add_argument('--top_k', default=2000, type=int, help='The Maximum number of box preds to consider in NMS.')
 parser.add_argument('--nms_thresh', default=0.5, type=float)
 
@@ -409,7 +409,7 @@ if __name__ == '__main__':
         net.load_state_dict(weights)
     print('Finished loading model!')
     # load data
-    dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(300, dataset_mean), AnnotationTransform())
+    dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(args.ssd_dim, dataset_mean), AnnotationTransform())
     if args.cuda:
         net = net.cuda()
         cudnn.benchmark = True
