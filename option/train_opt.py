@@ -12,7 +12,7 @@ parser.add_argument('--save_folder', default='renew_300_new_scale', help='Locati
 parser.add_argument('--deploy', action='store_true')
 
 # training config
-parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
+parser.add_argument('--max_iter', default=130000, type=int, help='Number of training iterations')
 parser.add_argument('--no_pretrain', action='store_true', help='default is using pretrain')
 parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
 parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
@@ -44,6 +44,7 @@ parser.add_argument('--send_images_to_visdom', type=str2bool, default=False, hel
 
 args = parser.parse_args()
 args.debug = not args.deploy
+args.experiment_name = args.save_folder
 # args.gpu_id = util._process(args.gpu_id)
 
 args.save_folder = os.path.join('result', args.save_folder, args.phase)

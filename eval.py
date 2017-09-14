@@ -105,6 +105,7 @@ parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
 parser.add_argument('--experiment_name', default='renew_ssd512_default', type=str, help='should be identical to that of train')
 # parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
 parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--sub_folder_suffix', default='', type=str)
 parser.add_argument('--phase', default='test', type=str)
 
 parser.add_argument('--ssd_dim', default=512, type=int)
@@ -120,7 +121,7 @@ args.save_folder = os.path.join('result', args.experiment_name, args.phase,
 args.trained_model = os.path.join('result', args.experiment_name, 'train', args.trained_model)
 
 if not os.path.exists(args.save_folder):
-    os.mkdir(args.save_folder)
+    util.mkdirs(args.save_folder)
 
 if args.cuda and torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')

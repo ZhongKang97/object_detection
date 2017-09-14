@@ -36,10 +36,13 @@ ssd_dim = args.ssd_dim
 means = (104, 117, 123)  # for voc
 num_classes = len(VOC_CLASSES) + 1
 batch_size = args.batch_size
-max_iter = args.iterations
+max_iter = args.max_iter
 schedule = args.schedule
 ssd_net = build_ssd(args, args.phase, args.ssd_dim, num_classes)
-print(ssd_net)
+if args.debug:
+    print(ssd_net)
+else:
+    print('Network structure not shown in deploy mode')
 
 optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
@@ -50,7 +53,8 @@ start_iter = ssd_net.opts.start_iter
 
 # write options and loss file
 log_file_name = os.path.join(args.save_folder,
-                             'opt_loss_{:s}_start_iter_{:d}.txt'.format(args.phase, start_iter))
+                             'opt_loss_{:s}_start_iter_{:d}_end_iter_{:d}.txt'.format(
+                                 args.phase, start_iter, max_iter))
 with open(log_file_name, 'wt') as log_file:
     log_file.write('------------ Options -------------\n')
     for k, v in sorted(vars(args).items()):
@@ -95,7 +99,7 @@ def train(debug=False):
     batch_iterator = None
     data_loader = data.DataLoader(dataset, batch_size, num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate, pin_memory=True)
-    for iteration in range(start_iter, max_iter):
+    for iteration in range(start_iter, max_iter+1):
 
         if (not batch_iterator) or (iteration % epoch_size == 0):
             # create batch iterator
@@ -126,7 +130,8 @@ def train(debug=False):
         # jot down the loss
         if iteration % loss_freq == 0:
 
-            msg = 'iter %d || Loss: %.4f || time: %.4f sec/iter' % (iteration, loss.data[0], (t1 - t0))
+            msg = '[%s]\titer %d || Loss: %.4f || time: %.4f sec/iter' % \
+                  (args.experiment_name, iteration, loss.data[0], (t1 - t0))
             print(msg)
             with open(log_file_name, "a") as log_file:
                 log_file.write('%s\n' % msg)
@@ -136,14 +141,14 @@ def train(debug=False):
                 vis.image(images.data[random_batch_index].cpu().numpy())
 
         # save results
-        if iteration % save_freq == 0:
+        if (iteration % save_freq == 0) | (iteration == max_iter):
             print('Saving state, iter:', iteration)
             torch.save({
                 'state_dict': ssd_net.state_dict(),
                 'iteration': iteration,
             }, '%s/ssd%d_0712_iter_' % (args.save_folder, args.ssd_dim) + repr(iteration) + '.pth')
 
-    print('Training done.')
+    print('Training done. start_iter / end_iter: {:d}/{:d}'.format(start_iter, max_iter))
     torch.save({
                 'state_dict': ssd_net.state_dict(),
                 'iteration': iteration,
