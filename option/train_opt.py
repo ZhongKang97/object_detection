@@ -1,5 +1,6 @@
 import argparse
 from data import VOCroot
+import os
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
@@ -7,8 +8,8 @@ def str2bool(v):
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_ssd512_default/', help='Location to save checkpoint models')
-parser.add_argument('--debug', default=False)
+parser.add_argument('--save_folder', default='renew_300_new_scale', help='Location to save checkpoint models')
+parser.add_argument('--deploy', action='store_true')
 
 # training config
 parser.add_argument('--iterations', default=130000, type=int, help='Number of training iterations')
@@ -27,8 +28,8 @@ parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for S
 # model params
 parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
-# parser.add_argument('--ssd_dim', default=300, type=int)
-parser.add_argument('--ssd_dim', default=512, type=int)
+parser.add_argument('--ssd_dim', default=300, type=int)
+# parser.add_argument('--ssd_dim', default=512, type=int)
 
 # runtime config
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
@@ -42,8 +43,9 @@ parser.add_argument('--display_id', default=1, type=int)
 parser.add_argument('--send_images_to_visdom', type=str2bool, default=False, help='Sample a random image from each 10th batch, send it to visdom after augmentations step')
 
 args = parser.parse_args()
+args.debug = not args.deploy
 # args.gpu_id = util._process(args.gpu_id)
 
-args.save_folder = 'result/' + args.save_folder + args.phase
+args.save_folder = os.path.join('result', args.save_folder, args.phase)
 if args.resume:
-    args.resume = args.save_folder + '/' + args.resume + '.pth'
+    args.resume = os.path.join(args.save_folder, (args.resume + '.pth'))

@@ -13,14 +13,12 @@ class PriorBox(object):
     """
     def __init__(self, cfg):
         super(PriorBox, self).__init__()
-        self.image_size = cfg['image_size']
-        # number of priors for feature map location (either 4 or 6)
-        self.num_priors = len(cfg['aspect_ratios'])
+        # self.image_size = cfg['image_size']
         self.variance = cfg['variance'] or [0.1]
         self.feature_maps = cfg['feature_maps']
-        self.min_sizes = cfg['min_sizes']
-        self.max_sizes = cfg['max_sizes']
-        self.steps = cfg['steps']
+        self.min_scale = cfg['min_scale']
+        self.max_scale = cfg['max_scale']
+        # self.steps = cfg['steps']
         self.aspect_ratios = cfg['aspect_ratios']
         self.clip = cfg['clip']
         self.version = cfg['name']
@@ -28,25 +26,37 @@ class PriorBox(object):
             if v <= 0:
                 raise ValueError('Variances must be greater than 0')
 
+        self.num_feat = len(self.feature_maps)
+        s_k = list()
+        for i in range(self.num_feat):
+            s_k.append(self.min_scale +
+                       (self.max_scale - self.min_scale)/(self.num_feat-1) * i)
+        self.s_k = s_k
+
     def forward(self):
         mean = []
         # TODO merge these
         if self.version == 'v2':
             for k, f in enumerate(self.feature_maps):
                 for i, j in product(range(f), repeat=2):
-                    f_k = self.image_size / self.steps[k]
+
+                    f_k = f
+                    # f_k = self.image_size / self.steps[k]
                     # unit center x,y
                     cx = (j + 0.5) / f_k
                     cy = (i + 0.5) / f_k
 
                     # aspect_ratio: 1
-                    # rel size: min_size
-                    s_k = self.min_sizes[k]/self.image_size
+                    # s_k = self.min_sizes[k]/self.image_size
+                    s_k = self.s_k[k]
                     mean += [cx, cy, s_k, s_k]
 
                     # aspect_ratio: 1
-                    # rel size: sqrt(s_k * s_(k+1))
-                    s_k_prime = sqrt(s_k * (self.max_sizes[k]/self.image_size))
+                    # s_k_prime = sqrt(s_k * (self.max_sizes[k]/self.image_size))
+                    if k == self.num_feat - 1:
+                        s_k_prime = 1.0
+                    else:
+                        s_k_prime = self.s_k[k+1]
                     mean += [cx, cy, s_k_prime, s_k_prime]
 
                     # rest of aspect ratios
