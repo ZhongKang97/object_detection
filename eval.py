@@ -102,21 +102,23 @@ def get_voc_results_file_template(image_set, cls):
 
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detection')
-parser.add_argument('--experiment_name', default='renew_default', type=str, help='should be identical to that of train')
-# parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
-parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--experiment_name', default='renew_ssd512_default', type=str, help='should be identical to that of train')
+parser.add_argument('--trained_model', default='ssd512_0712_iter_65000.pth', type=str)
+# parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--sub_folder_suffix', default='', type=str)
 parser.add_argument('--phase', default='test', type=str)
 
-parser.add_argument('--ssd_dim', default=300, type=int)
-parser.add_argument('--conf_thresh', default=0.01, type=float, help='Detection confidence threshold')
-parser.add_argument('--top_k', default=2000, type=int, help='The Maximum number of box preds to consider in NMS.')
-parser.add_argument('--nms_thresh', default=0.5, type=float)
+parser.add_argument('--ssd_dim', default=512, type=int)
+parser.add_argument('--conf_thresh', default=0.005, type=float, help='Detection confidence threshold')  # 0.01
+parser.add_argument('--top_k', default=2000, type=int, help='Maximum number of box preds to consider in NMS.')  # 200
+parser.add_argument('--nms_thresh', default=0.45, type=float)  # 0.45
 
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 args = parser.parse_args()
-args.save_folder = 'result/' + args.experiment_name + '/' + args.phase + '/'
-args.trained_model = 'result/' + args.experiment_name + '/train/' + args.trained_model
+args.save_folder = os.path.join('result', args.experiment_name, args.phase,
+                                (args.trained_model + args.sub_folder_suffix))
+args.trained_model = os.path.join('result', args.experiment_name, 'train', args.trained_model)
 
 if not os.path.exists(args.save_folder):
     os.mkdir(args.save_folder)
@@ -131,6 +133,17 @@ imgpath = os.path.join(args.voc_root, 'VOC2007', 'JPEGImages', '%s.jpg')
 imgsetpath = os.path.join(args.voc_root, 'VOC2007', 'ImageSets', 'Main', '{:s}.txt')
 dataset_mean = (104, 117, 123)
 set_type = args.phase
+
+# write options and result
+args.log_file_name = os.path.join(args.save_folder,
+                                  'opt_{:s}_result.txt'.format(args.phase))
+with open(args.log_file_name, 'wt') as log_file:
+    log_file.write('------------ Options -------------\n')
+    for k, v in sorted(vars(args).items()):
+        log_file.write('%s: %s\n' % (str(k), str(v)))
+
+    log_file.write('-------------- End ----------------\n\n')
+    log_file.write('================ Result ================\n')
 
 
 def write_voc_results_file(all_boxes, dataset):
@@ -162,29 +175,32 @@ def do_python_eval(prefix='output', use_07=True):
     use_07_metric = use_07
     print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
 
-    aps = []
-    for i, cls in enumerate(labelmap):
-        filename = get_voc_results_file_template(set_type, cls)
-        rec, prec, ap = voc_eval(
-            filename, annopath, imgsetpath.format(set_type), cls, cachedir,
-            ovthresh=0.5, use_07_metric=use_07_metric)
-        aps += [ap]
-        print('AP for {} = {:.4f}'.format(cls, ap))
-        with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
-            pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
+    with open(args.log_file_name, 'a') as log_file:
+        aps = []
+        for i, cls in enumerate(labelmap):
+            filename = get_voc_results_file_template(set_type, cls)
+            rec, prec, ap = voc_eval(
+                filename, annopath, imgsetpath.format(set_type), cls, cachedir,
+                ovthresh=0.5, use_07_metric=use_07_metric)
+            aps += [ap]
+            print('AP for {} = {:.4f}'.format(cls, ap))
+            log_file.write('AP for {} = {:.4f}\n'.format(cls, ap))
+            with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
+                pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
 
-    print('Mean AP = {:.4f}'.format(np.mean(aps)))
-    print('~~~~~~~~')
-    print('Results:')
-    for ap in aps:
-        print('{:.3f}'.format(ap))
-    print('{:.3f}'.format(np.mean(aps)))
-    print('~~~~~~~~')
-    print('')
-    print('--------------------------------------------------------------')
-    print('Results computed with the **unofficial** Python eval code.')
-    print('Results should be very close to the official MATLAB eval code.')
-    print('--------------------------------------------------------------')
+        print('Mean AP = {:.4f}'.format(np.mean(aps)))
+        log_file.write('Mean AP = {:.4f}\n'.format(np.mean(aps)))
+    # print('~~~~~~~~')
+    # print('Results:')
+    # for ap in aps:
+    #     print('{:.3f}'.format(ap))
+    # print('{:.3f}'.format(np.mean(aps)))
+    # print('~~~~~~~~')
+    # print('')
+    # print('--------------------------------------------------------------')
+    # print('Results computed with the **unofficial** Python eval code.')
+    # print('Results should be very close to the official MATLAB eval code.')
+    # print('--------------------------------------------------------------')
 
 
 def voc_eval(detpath, annopath, imagesetfile, classname, cachedir, ovthresh=0.5, use_07_metric=True):
@@ -346,7 +362,7 @@ def voc_ap(rec, prec, use_07_metric=True):
 def test_net(net, dataset):
 
     num_images = len(dataset)
-    # num_images = 10     # for debug
+
     # all detections are collected into:
     #    all_boxes[cls][image] = N x 5 array of detections in
     #    (x1, y1, x2, y2, score)
@@ -360,6 +376,7 @@ def test_net(net, dataset):
     det_file = os.path.join(output_dir, 'detections_all_boxes.pkl')
 
     # TODO: if all_boxes file exist, skip the following
+    show_freq = 500
     for i in range(num_images):
         im, gt, h, w = dataset.pull_item(i)
 
@@ -387,8 +404,12 @@ def test_net(net, dataset):
                 .astype(np.float32, copy=False)
             all_boxes[j][i] = cls_dets
 
-        print('im_detect: {:d}/{:d} {:.3f}s'.format(i + 1,
-                                                    num_images, detect_time))
+        if i % show_freq == 0:
+            print('[{:s}][{:s}]\tim_detect: {:d}/{:d} {:.3f}s'.format(args.experiment_name,
+                                                                      (os.path.basename(args.trained_model) + args.sub_folder_suffix),
+                                                                      i + 1,
+                                                                      num_images,
+                                                                      detect_time))
 
     with open(det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
@@ -409,7 +430,8 @@ if __name__ == '__main__':
         net.load_state_dict(weights)
     print('Finished loading model!')
     # load data
-    dataset = VOCDetection(args.voc_root, [('2007', set_type)], BaseTransform(300, dataset_mean), AnnotationTransform())
+    dataset = VOCDetection(args.voc_root, [('2007', set_type)],
+                           BaseTransform(args.ssd_dim, dataset_mean), AnnotationTransform())
     if args.cuda:
         net = net.cuda()
         cudnn.benchmark = True

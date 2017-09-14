@@ -46,10 +46,11 @@ optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
 criterion = MultiBoxLoss(num_classes, 0.5, True, 0, True, 3, 0.5, False, args.cuda)
 
 ssd_net.load_weight_new()
+start_iter = ssd_net.opts.start_iter
 
 # write options and loss file
 log_file_name = os.path.join(args.save_folder,
-                             'opt_loss_{:s}_start_iter_{:d}.txt'.format(args.phase, args.start_iter))
+                             'opt_loss_{:s}_start_iter_{:d}.txt'.format(args.phase, start_iter))
 with open(log_file_name, 'wt') as log_file:
     log_file.write('------------ Options -------------\n')
     for k, v in sorted(vars(args).items()):
@@ -94,7 +95,7 @@ def train(debug=False):
     batch_iterator = None
     data_loader = data.DataLoader(dataset, batch_size, num_workers=args.num_workers,
                                   shuffle=True, collate_fn=detection_collate, pin_memory=True)
-    for iteration in range(args.start_iter, max_iter):
+    for iteration in range(start_iter, max_iter):
 
         if (not batch_iterator) or (iteration % epoch_size == 0):
             # create batch iterator
