@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from layers import *
-from data import v2, v2_512
+from data.config import *
 import os
 import collections
 import utils.util as util
@@ -32,11 +32,12 @@ class SSD(nn.Module):
         self.phase = phase
         self.num_classes = num_classes
         # TODO: implement __call__ in PriorBox, by the original author
-        # v2 is cfg
-        if opts.ssd_dim == 300:
-            self.priorbox = PriorBox(v2)  # init the priors (anchors) based on config
-        elif opts.ssd_dim == 512:
-            self.priorbox = PriorBox(v2_512)
+        # init the priors (anchors) based on config
+        if opts.prior_config == 'v2':
+            self.priorbox = PriorBox(v2, opts.ssd_dim)
+        elif opts.prior_config == 'v3':
+            self.priorbox = PriorBox(v3, opts.ssd_dim)
+
         # for ssd300, priors: [8732 x 4] boxes/anchors
         self.priors = Variable(self.priorbox.forward(), volatile=True)
 

@@ -29,7 +29,7 @@ parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for S
 parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 parser.add_argument('--ssd_dim', default=300, type=int)
-# parser.add_argument('--ssd_dim', default=512, type=int)
+parser.add_argument('--prior_config', default='v2', type=str)
 
 # runtime config
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
