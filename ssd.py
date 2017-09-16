@@ -37,6 +37,8 @@ class SSD(nn.Module):
             self.priorbox = PriorBox(v2, opts.ssd_dim)
         elif opts.prior_config == 'v3':
             self.priorbox = PriorBox(v3, opts.ssd_dim)
+        elif opts.prior_config == 'v2_512':
+            self.priorbox = PriorBox(v2_512, opts.ssd_dim)
 
         # for ssd300, priors: [8732 x 4] boxes/anchors
         self.priors = Variable(self.priorbox.forward(), volatile=True)
