@@ -16,6 +16,12 @@ from layers.modules import MultiBoxLoss
 from ssd import build_ssd           # this is a function
 from option.train_opt import args
 
+if type(args.schedule[0]) == str:
+    temp_ = args.schedule[0].split(',')
+    schedule = list()
+    for i in range(len(temp_)):
+        schedule.append(int(temp_[i]))
+    args.schedule = schedule
 
 # TO LAUNCH VISDOM: python -m visdom.server -port PORT_ID
 if args.visdom:
@@ -82,7 +88,9 @@ def adjust_learning_rate(optimizer, step):
     # Adapted from PyTorch Imagenet example:
     # https://github.com/pytorch/examples/blob/master/imagenet/main.py
     """
-    decay = args.gamma ** (sum(step >= np.array(args.schedule)))
+
+    schedule_list = np.array(args.schedule)
+    decay = args.gamma ** (sum(step >= schedule_list))
     lr = args.lr * decay
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
