@@ -113,7 +113,13 @@ def train(debug=False):
             # create batch iterator
             batch_iterator = iter(data_loader)
 
+        old_lr = optimizer.param_groups[0]['lr']
         adjust_learning_rate(optimizer, iteration)
+        new_lr = optimizer.param_groups[0]['lr']
+        if iteration == start_iter:
+            print('\ninit learning rate {:f} at iter {:d}\n'.format(old_lr, iteration))
+        if old_lr != new_lr:
+            print('\nchange learning rate from {:f} to {:f} at iter {:d}\n'.format(old_lr, new_lr, iteration))
         # load train data
         images, targets = next(batch_iterator)
 

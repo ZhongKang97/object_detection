@@ -14,15 +14,7 @@ class PriorBox(object):
     def __init__(self, cfg, ssd_dim):
         super(PriorBox, self).__init__()
 
-        if cfg['name'] == 'v2_512':
-            # implement the old prior generation method
-            self.image_size = cfg['image_size']
-            self.steps = cfg['steps']
-            self.feature_maps = cfg['feature_maps']
-            self.min_sizes = cfg['min_sizes']
-            self.max_sizes = cfg['max_sizes']
-            self.use_old = True
-        else:
+        if cfg['name'] == 'v2' or cfg['name'] == 'v3':
             self.feature_maps = cfg['feature_maps'][str(ssd_dim)]
             self.min_scale = cfg['min_scale']
             self.max_scale = cfg['max_scale']
@@ -34,6 +26,14 @@ class PriorBox(object):
                            (self.max_scale - self.min_scale)/(self.num_feat-1) * i)
             self.s_k = s_k
             self.use_old = False
+        else:
+            # implement the old prior generation method
+            self.image_size = cfg['image_size']
+            self.steps = cfg['steps']
+            self.feature_maps = cfg['feature_maps']
+            self.min_sizes = cfg['min_sizes']
+            self.max_sizes = cfg['max_sizes']
+            self.use_old = True
 
         self.aspect_ratios = cfg['aspect_ratios']
         self.clip = cfg['clip']

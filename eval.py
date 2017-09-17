@@ -112,7 +112,7 @@ parser.add_argument('--ssd_dim', default=512, type=int)
 parser.add_argument('--conf_thresh', default=0.005, type=float, help='Detection confidence threshold')
 parser.add_argument('--top_k', default=2000, type=int, help='The Maximum number of box preds to consider in NMS.')
 parser.add_argument('--nms_thresh', default=0.5, type=float)
-parser.add_argument('--prior_config', default='v2', type=str)  # the same setting as training
+parser.add_argument('--prior_config', default='v2_512', type=str)  # the same setting as training
 
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
 parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
@@ -149,7 +149,7 @@ with open(args.log_file_name, 'wt') as log_file:
 
 def write_voc_results_file(all_boxes, dataset):
     for cls_ind, cls in enumerate(labelmap):
-        print('Writing {:s} VOC results file'.format(cls))
+        # print('Writing {:s} VOC results file'.format(cls))
         filename = get_voc_results_file_template(set_type, cls)
         with open(filename, 'wt') as f:
             for im_ind, index in enumerate(dataset.ids):

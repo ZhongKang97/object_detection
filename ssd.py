@@ -39,6 +39,12 @@ class SSD(nn.Module):
             self.priorbox = PriorBox(v3, opts.ssd_dim)
         elif opts.prior_config == 'v2_512':
             self.priorbox = PriorBox(v2_512, opts.ssd_dim)
+        elif opts.prior_config == 'v2_512_standard':
+            self.priorbox = PriorBox(v2_512_standard, opts.ssd_dim)
+        elif opts.prior_config == 'v2_512_stan_more_ar':
+            self.priorbox = PriorBox(v2_512_stan_more_ar, opts.ssd_dim)
+        elif opts.prior_config == 'v2_634':
+            self.priorbox = PriorBox(v2_634, opts.ssd_dim)
 
         # for ssd300, priors: [8732 x 4] boxes/anchors
         self.priors = Variable(self.priorbox.forward(), volatile=True)
@@ -168,14 +174,17 @@ base = {
             512, 512, 512],
     '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
             512, 512, 512],
+    '634': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
 }
 extras = {
     '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
     '512': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+    '634': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
 }
 mbox = {
-    '300': [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
-    '512': [4, 6, 6, 6, 4, 4],
+    'original':     [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
+    'more_ar':      [6, 6, 6, 6, 6, 6],
 }
 
 
@@ -244,5 +253,7 @@ def build_ssd(opts, phase, size, num_classes):
 
     vgg_layers = vgg(base[str(size)], 3)
     extra_layers = add_extras(extras[str(size)], 1024)
+    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' \
+                                      or opts.prior_config == 'v2_634' else mbox['original']
     return SSD(opts, phase, num_classes,
-               *multibox(vgg_layers, extra_layers, mbox[str(size)], num_classes))
+               *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
