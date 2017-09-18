@@ -4,9 +4,9 @@ start=`date +%s`
 
 # train
 # about bs: 2gpu, bs=16, out of mem; bs=10 is ok
-CUDA_VISIBLE_DEVICES=4,5,6,7 python train.py \
---save_folder=renew_634 --batch_size=32 --ssd_dim=634 --max_iter=100000 \
---prior_config=v2_634 --lr=1e-3 --schedule=60000,80000,90000 --gamma=0.5 \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
+--save_folder=renew_634_set1 --batch_size=30 --ssd_dim=634 --max_iter=100000 \
+--prior_config=v2 --lr=1e-3 --schedule=60000,80000,90000 --gamma=0.5 \
 --deploy
 
 # test
