@@ -45,6 +45,8 @@ class SSD(nn.Module):
             self.priorbox = PriorBox(v2_512_stan_more_ar, opts.ssd_dim)
         elif opts.prior_config == 'v2_634':
             self.priorbox = PriorBox(v2_634, opts.ssd_dim)
+        elif opts.prior_config == 'v2_634_standard':
+            self.priorbox = PriorBox(v2_634_standard, opts.ssd_dim)
 
         # for ssd300, priors: [8732 x 4] boxes/anchors
         self.priors = Variable(self.priorbox.forward(), volatile=True)
@@ -253,7 +255,7 @@ def build_ssd(opts, phase, size, num_classes):
 
     vgg_layers = vgg(base[str(size)], 3)
     extra_layers = add_extras(extras[str(size)], 1024)
-    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' \
-                                      or opts.prior_config == 'v2_634' else mbox['original']
+    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
+        else mbox['original']
     return SSD(opts, phase, num_classes,
                *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))

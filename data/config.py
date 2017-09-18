@@ -84,6 +84,19 @@ v2_634 = {
     'name':             'v2_634',
 }
 
+# min_scale, 0.1, max 0.9, linearly spaced
+v2_634_standard = {
+    'image_size':       634,
+    'steps':            [8, 16, 32, 64, 80, 106],
+    'feature_maps':     [79, 39, 20, 10, 8, 6],
+    'min_sizes':        [63, 165, 266, 367, 469, 570],
+    'max_sizes':        [165, 266, 367, 469, 570, 650],
+    'aspect_ratios':    [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+    'variance':         [0.1, 0.2],
+    'clip':             True,
+    'name':             'v2_634_standard',
+}
+
 # the original config:
 # 30.0
 # 78.0
