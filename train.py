@@ -8,6 +8,8 @@ import torch.optim as optim
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 import torch.utils.data as data
+import torchvision.datasets as dset
+import torchvision.transforms as transforms
 
 from data import AnnotationTransform, VOCDetection, detection_collate, VOCroot, VOC_CLASSES
 from utils.augmentations import SSDAugmentation
@@ -36,6 +38,11 @@ if args.cuda and torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
     torch.set_default_tensor_type('torch.FloatTensor')
+
+root_path = '/home/hongyang/dataset/coco'
+anno_file = 'instances_train2014.json'
+det = dset.CocoDetection(root=(root_path + '/train2014'), annFile=(root_path + '/annotations/' + anno_file),
+                         transform=transforms.ToTensor())
 
 train_sets = [('2007', 'trainval'), ('2012', 'trainval')]
 ssd_dim = args.ssd_dim

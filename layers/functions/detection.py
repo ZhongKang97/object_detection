@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import Function
-from ..box_utils import decode, nms
+from ..box_utils import decode, nms, soft_nms
 from data import v2 as cfg
 
 
@@ -10,14 +10,14 @@ class Detect(Function):
     scores and threshold to a top_k number of output predictions for both
     confidence score and locations.
     """
-    def __init__(self, num_classes, bkg_label, top_k, conf_thresh, nms_thresh):
+    def __init__(self, num_classes, bkg_label, top_k, conf_thresh, nms_thresh, soft_nms=-1):
         self.num_classes = num_classes
         self.background_label = bkg_label
         self.top_k = top_k
-        # Parameters used in nms.
         self.nms_thresh = nms_thresh
         if nms_thresh <= 0:
             raise ValueError('nms_threshold must be non negative.')
+        self.soft_nms = soft_nms
         self.conf_thresh = conf_thresh
         self.variance = cfg['variance']
         self.output = torch.zeros(1, self.num_classes, self.top_k, 5)
@@ -57,10 +57,16 @@ class Detect(Function):
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
                 # idx of highest scoring and non-overlapping boxes per class
-                ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
-                self.output[i, cl, :count] = \
-                    torch.cat((scores[ids[:count]].unsqueeze(1),
-                               boxes[ids[:count]]), 1)
+                if self.soft_nms == -1:
+                    ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
+                    self.output[i, cl, :count] = \
+                        torch.cat((scores[ids[:count]].unsqueeze(1),
+                                   boxes[ids[:count]]), 1)
+                else:
+                    count = boxes.size(0) if boxes.size(0) < self.top_k else self.top_k
+                    new_scores, new_boxes = soft_nms(boxes, scores, self.nms_thresh, self.top_k, type=self.soft_nms)
+                    self.output[i, cl, :count] = torch.cat((new_scores.unsqueeze(1), new_boxes), 1)
+
         # flt = self.output.view(-1, 5)
         # _, idx = flt[:, 0].sort(0)
         # _, rank = idx.sort(0)
