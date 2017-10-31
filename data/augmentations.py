@@ -107,8 +107,7 @@ class Resize(object):
         self.size = size
 
     def __call__(self, image, boxes=None, labels=None):
-        image = cv2.resize(image, (self.size,
-                                 self.size))
+        image = cv2.resize(image, (self.size, self.size))
         return image, boxes, labels
 
 
@@ -344,6 +343,7 @@ class RandomMirror(object):
         if random.randint(2):
             image = image[:, ::-1]
             boxes = boxes.copy()
+            # the boxes coor are also swapped
             boxes[:, 0::2] = width - boxes[:, 2::-2]
         return image, boxes, classes
 

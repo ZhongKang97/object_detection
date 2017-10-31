@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from .voc0712 import VOCDetection, AnnotationTransform, detection_collate, VOC_CLASSES
+from .setup_dset import VOCDetection, COCODetection, AnnotationTransform, detection_collate
 
 
 def base_transform(image, size, mean):

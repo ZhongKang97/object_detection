@@ -40,7 +40,10 @@ def build_ssd(opts, phase, size, num_classes):
     mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
         else mbox['original']
     model = SSD(opts, phase, num_classes,
-               *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
+                *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
+    # init the network
+    model.load_weight_new()
+    start_iter = model.opts.start_iter
     if opts.debug:
         print(model)
     else:
@@ -48,7 +51,8 @@ def build_ssd(opts, phase, size, num_classes):
     if opts.cuda & ~opts.debug:
         model = torch.nn.DataParallel(model).cuda()
         cudnn.benchmark = True
-    return model
+        # torch.nn.functional.grid_sample()
+    return model, start_iter
 
 
 class SSD(nn.Module):
