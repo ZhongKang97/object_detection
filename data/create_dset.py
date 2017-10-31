@@ -1,6 +1,6 @@
 import os
 from data.augmentations import SSDAugmentation
-from data import AnnotationTransform
+from data import AnnotationTransform, BaseTransform
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
@@ -11,11 +11,12 @@ def create_dataset(opts):
     home = os.path.expanduser("~")
     if name == 'voc':
         print('Loading Dataset...')
-        train_sets = [('2007', 'trainval'), ('2012', 'trainval')]
+        sets = [('2007', 'trainval'), ('2012', 'trainval')] if opts.phase == 'train' else [('2007', 'test')]
+        DataAug = SSDAugmentation if opts.phase == 'train' else BaseTransform
         data_root = os.path.join(home, "data/VOCdevkit/")
         from data import VOCDetection
-        dataset = VOCDetection(data_root, train_sets,
-                               SSDAugmentation(opts.ssd_dim, means),
+        dataset = VOCDetection(data_root, sets,
+                               DataAug(opts.ssd_dim, means),
                                AnnotationTransform())
     elif name == 'coco':
         data_root = os.path.join(home, 'dataset/coco')

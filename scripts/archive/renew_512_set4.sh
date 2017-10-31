@@ -9,12 +9,12 @@ start=`date +%s`
 #--deploy
 
 # test
-#CUDA_VISIBLE_DEVICES=1 python eval.py --experiment_name=renew_512_set4 \
+#CUDA_VISIBLE_DEVICES=1 python test.py --experiment_name=renew_512_set4 \
 #--trained_model=ssd512_0712_iter_65000.pth \
 #--ssd_dim=512 --conf_thresh=0.005 --top_k=300 --nms_thresh=0.45 \
 #--prior_config=v2_512_stan_more_ar
 
-#CUDA_VISIBLE_DEVICES=1 python eval.py --experiment_name=renew_512_set4 \
+#CUDA_VISIBLE_DEVICES=1 python test.py --experiment_name=renew_512_set4 \
 #--trained_model=ssd512_0712_iter_75000.pth \
 #--ssd_dim=512 --conf_thresh=0.005 --top_k=300 --nms_thresh=0.45 \
 #--prior_config=v2_512_stan_more_ar
