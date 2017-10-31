@@ -7,17 +7,13 @@ https://github.com/fmassa/vision/blob/voc_dataset/torchvision/datasets/voc.py
 
 import os
 import os.path
-import sys
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
-if sys.version_info[0] == 2:
-    import xml.etree.cElementTree as ET
-else:
-    import xml.etree.ElementTree as ET
+from utils.util import ET
 
 VOC_CLASSES = (  # always index 0
     'aeroplane', 'bicycle', 'bird', 'boat',
@@ -247,7 +243,7 @@ class COCODetection(data.Dataset):
         self.phase = phase
 
     def __getitem__(self, index):
-        im, gt, _, _ = self.pull_item(index)
+        im, gt, h, w = self.pull_item(index)
 
         return im, gt
 

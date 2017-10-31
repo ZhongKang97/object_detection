@@ -30,7 +30,11 @@ mbox = {
 }
 
 
-def build_ssd(opts, phase, size, num_classes):
+def build_ssd(opts, num_classes):
+    phase = opts.phase
+    size = opts.ssd_dim
+    start_iter = []     # for training
+
     if phase != "test" and phase != "train":
         print("Error: Phase not recognized")
         return
@@ -41,17 +45,35 @@ def build_ssd(opts, phase, size, num_classes):
         else mbox['original']
     model = SSD(opts, phase, num_classes,
                 *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
-    # init the network
-    model.load_weight_new()
-    start_iter = model.opts.start_iter
-    if opts.debug:
-        print(model)
+
+    if phase == 'train':
+        model.train()
+        # init the network
+        model.load_weight_new()
+        start_iter = model.opts.start_iter
+        if opts.debug:
+            print(model)
+        else:
+            print('Network structure not shown in deploy mode')
+        if opts.cuda:
+            if ~opts.debug:
+                model = torch.nn.DataParallel(model).cuda()
+            else:
+                model = model.cuda()
+            cudnn.benchmark = True
     else:
-        print('Network structure not shown in deploy mode')
-    if opts.cuda & ~opts.debug:
-        model = torch.nn.DataParallel(model).cuda()
-        cudnn.benchmark = True
-        # torch.nn.functional.grid_sample()
+        checkpoint = torch.load(opts.trained_model)
+        model.eval()
+        try:
+            model.load_state_dict(checkpoint['state_dict'])
+        except KeyError:
+            weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
+            model.load_state_dict(weights)
+        print('Finished loading model in test phase!')
+        if opts.cuda:
+            model = model.cuda()
+            cudnn.benchmark = True
+
     return model, start_iter
 
 
@@ -176,18 +198,6 @@ class SSD(nn.Module):
             )
         return output
 
-    def load_weights(self, base_file):
-        # DEPRECATED
-        other, ext = os.path.splitext(base_file)
-        if ext == '.pkl' or '.pth':
-            print('Loading weights into state dict...')
-            # self.load_state_dict(torch.load(base_file, map_location=lambda storage, loc: storage))
-            weights = torch.load(base_file, map_location=lambda storage, loc: storage)
-            weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
-            self.load_state_dict(weights_new)
-            print('Finished!')
-        else:
-            print('Sorry only .pth and .pkl files supported.')
 
     def load_weight_new(self):
         if self.opts.resume:

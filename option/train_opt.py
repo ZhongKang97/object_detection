@@ -1,11 +1,6 @@
 import argparse
-import os
-import torch
-import utils.util as util
+from utils.util import *
 
-
-def str2bool(v):
-    return v.lower() in ("yes", "true", "t", "1")
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
@@ -60,7 +55,7 @@ if type(args.schedule[0]) == str:
     args.schedule = schedule
 
 if not os.path.exists(args.save_folder):
-    util.mkdirs(args.save_folder)
+    mkdirs(args.save_folder)
 
 if torch.cuda.is_available():
     args.cuda = True

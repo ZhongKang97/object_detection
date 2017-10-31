@@ -37,7 +37,7 @@ dataset = create_dataset(args)
 data_loader = data.DataLoader(dataset, args.batch_size, num_workers=args.num_workers,
                               shuffle=True, collate_fn=detection_collate, pin_memory=True)
 
-ssd_net, start_iter = build_ssd(args, args.phase, args.ssd_dim, dataset.num_classes)
+ssd_net, start_iter = build_ssd(args, dataset.num_classes)
 optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
 criterion = MultiBoxLoss(dataset.num_classes, 0.5, True, 0, True, 3, 0.5, False, args.cuda)
@@ -112,7 +112,7 @@ for iteration in range(start_iter, args.max_iter+1):
         torch.save({
             'state_dict': ssd_net.state_dict(),
             'iteration': iteration,
-        }, '%s/ssd%d_0712_iter_' % (args.save_folder, args.ssd_dim) + repr(iteration) + '.pth')
+        }, '%s/ssd%d_%s_iter_' % (args.save_folder, args.ssd_dim, dataset.name) + repr(iteration) + '.pth')
 
 print('Training done. start_iter / end_iter: {:d}/{:d}'.format(start_iter, args.max_iter))
 torch.save({
