@@ -11,11 +11,12 @@ start=`date +%s`
 
 ## test
 # '0712' is shown for legacy reason
-CUDA_VISIBLE_DEVICES=1 python test.py --experiment_name=ssd_base_101 \
+CUDA_VISIBLE_DEVICES=2 python test.py --experiment_name=ssd_base_101 \
 --trained_model=ssd512_0712_iter_10000.pth \
 --dataset=coco \
---sub_folder_suffix=set1 \
---ssd_dim=512 --conf_thresh=0.2 --top_k=300 --nms_thresh=0.5 \
+--show_freq=20 \
+--sub_folder_suffix=set2 \
+--ssd_dim=512 --conf_thresh=0.01 --top_k=300 --nms_thresh=0.5 \
 --prior_config=v2_512
 
 
