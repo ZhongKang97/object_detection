@@ -1,10 +1,3 @@
-# config.py
-import os.path
-
-# gets home dir cross platform
-home = os.path.expanduser("~")
-VOCroot = os.path.join(home, "data/VOCdevkit/")
-
 v2 = {
     'feature_maps':     {
         '300':      [38, 19, 10, 5, 3, 1],

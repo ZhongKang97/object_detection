@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Function
 from ..box_utils import decode, nms, soft_nms
-from data import v2 as cfg
+from option.config import v2 as cfg
 
 
 class Detect(Function):

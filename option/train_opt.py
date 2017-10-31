@@ -1,14 +1,16 @@
 import argparse
-from data import VOCroot
 import os
+import torch
+import utils.util as util
+
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
-parser.add_argument('--phase', default='train')
-parser.add_argument('--save_folder', default='renew_300_new_scale', help='Location to save checkpoint models')
+parser.add_argument('--dataset', default='voc', help='[ voc | coco ]')
+parser.add_argument('--experiment_name', default='ssd_base_101')
 parser.add_argument('--deploy', action='store_true')
 
 # training config
@@ -27,27 +29,46 @@ parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for S
 
 # model params
 parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
-parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
+# parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 parser.add_argument('--ssd_dim', default=634, type=int)
 # parser.add_argument('--prior_config', default='v2_512', type=str)
 parser.add_argument('--prior_config', default='v2_634', type=str)
 
-# runtime config
+# runtime and display
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
-parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
-# enable gpu_id, launch in terminal: CUDA_VISIBLE_DEVICES=1,2 python train.py
-# parser.add_argument('--gpu_id', default='1', type=str, help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-
+# parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
 parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port_id', default=8097, type=int)
 parser.add_argument('--display_id', default=1, type=int)
-parser.add_argument('--send_images_to_visdom', type=str2bool, default=False, help='Sample a random image from each 10th batch, send it to visdom after augmentations step')
+parser.add_argument('--send_images_to_visdom', type=str2bool, default=False,
+                    help='Sample a random image from each 10th batch, send it to visdom after augmentations step')
 
 args = parser.parse_args()
 args.debug = not args.deploy
-args.experiment_name = args.save_folder
+args.phase = 'train'
 # args.gpu_id = util._process(args.gpu_id)
 
-args.save_folder = os.path.join('result', args.save_folder, args.phase)
+args.save_folder = os.path.join('result', args.experiment_name, args.phase)
 if args.resume:
     args.resume = os.path.join(args.save_folder, (args.resume + '.pth'))
+
+if type(args.schedule[0]) == str:
+    temp_ = args.schedule[0].split(',')
+    schedule = list()
+    for i in range(len(temp_)):
+        schedule.append(int(temp_[i]))
+    args.schedule = schedule
+
+if not os.path.exists(args.save_folder):
+    util.mkdirs(args.save_folder)
+
+if torch.cuda.is_available():
+    args.cuda = True
+    torch.set_default_tensor_type('torch.cuda.FloatTensor')
+else:
+    torch.set_default_tensor_type('torch.FloatTensor')
+
+if args.debug:
+    args.loss_freq, args.save_freq = 1, 5
+else:
+    args.loss_freq, args.save_freq = 50, 5000

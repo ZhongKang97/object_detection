@@ -1,12 +1,54 @@
+import collections
+import os
+
 import torch
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from layers import *
-from data.config import *
-import os
-import collections
+
 import utils.util as util
+from layers import *
+from option.config import *
+
+base = {
+    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
+    '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
+    '634': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
+            512, 512, 512],
+}
+extras = {
+    '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+    '512': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+    '634': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
+}
+mbox = {
+    'original':     [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
+    'more_ar':      [6, 6, 6, 6, 6, 6],
+}
+
+
+def build_ssd(opts, phase, size, num_classes):
+    if phase != "test" and phase != "train":
+        print("Error: Phase not recognized")
+        return
+
+    vgg_layers = vgg(base[str(size)], 3)
+    extra_layers = add_extras(extras[str(size)], 1024)
+    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
+        else mbox['original']
+    model = SSD(opts, phase, num_classes,
+               *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
+    if opts.debug:
+        print(model)
+    else:
+        print('Network structure not shown in deploy mode')
+    if opts.cuda & ~opts.debug:
+        model = torch.nn.DataParallel(model).cuda()
+        cudnn.benchmark = True
+    return model
 
 
 class SSD(nn.Module):
@@ -173,25 +215,6 @@ class SSD(nn.Module):
                 self.conf.apply(util.weights_init)
 
 
-base = {
-    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '634': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-}
-extras = {
-    '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-    '512': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-    '634': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-}
-mbox = {
-    'original':     [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
-    'more_ar':      [6, 6, 6, 6, 6, 6],
-}
-
-
 # This function is derived from torchvision VGG make_layers()
 # https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
 def vgg(cfg, i, batch_norm=False):
@@ -250,14 +273,4 @@ def multibox(vgg, extra_layers, cfg, num_classes):
     return vgg, extra_layers, (loc_layers, conf_layers)
 
 
-def build_ssd(opts, phase, size, num_classes):
-    if phase != "test" and phase != "train":
-        print("Error: Phase not recognized")
-        return
 
-    vgg_layers = vgg(base[str(size)], 3)
-    extra_layers = add_extras(extras[str(size)], 1024)
-    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
-        else mbox['original']
-    return SSD(opts, phase, num_classes,
-               *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
