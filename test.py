@@ -24,50 +24,66 @@ _temp = '' if args.sub_folder_suffix == '' else '_'  # for display in a neat man
 show_freq = args.show_freq
 _t = {'im_detect': Timer(), 'misc': Timer()}
 num_images = len(dataset)
-# all detections are collected into:
-#    all_boxes[cls][image] = N x 5 array of detections in
-#    (x1, y1, x2, y2, score)
-all_boxes = [[[] for _ in range(num_images)]
-             for _ in range(dataset.num_classes+1)]
-
-# TODO: if all_boxes file exist, skip the following
-for i in range(num_images):
-    im, gt, h, w = dataset.pull_item(i)
-
-    x = Variable(im.unsqueeze(0))
-    if args.cuda:
-        x = x.cuda()
-    _t['im_detect'].tic()
-    detections = net(x).data
-    detect_time = _t['im_detect'].toc(average=False)
-
-    # skip j = 0, because it's the background class
-    for j in range(1, detections.size(1)):
-        dets = detections[0, j, :]
-        mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
-        dets = torch.masked_select(dets, mask).view(-1, 5)
-        if dets.dim() == 0:
-            continue
-        boxes = dets[:, 1:]
-        boxes[:, 0] *= w
-        boxes[:, 2] *= w
-        boxes[:, 1] *= h
-        boxes[:, 3] *= h
-        scores = dets[:, 0].cpu().numpy()
-        cls_dets = np.hstack((boxes.cpu().numpy(), scores[:, np.newaxis])) \
-            .astype(np.float32, copy=False)
-        all_boxes[j][i] = cls_dets
-
-    if i % show_freq == 0:
-        print('[{:s}][{:s}]\tim_detect: '
-              '{:d}/{:d} {:.3f}s'.format(args.experiment_name,
-                                         (os.path.basename(args.trained_model) + _temp + args.sub_folder_suffix),
-                                         i + 1, num_images, detect_time))
 
 det_file = os.path.join(args.save_folder, 'detections_all_boxes.pkl')
-with open(det_file, 'wb') as f:
-    pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
+if os.path.isfile(det_file):
+    print('Raw boxes exist! skip test time and directly evaluate!...')
+    # all_boxes = []
+    # with open(det_file, 'rb') as f:
+    #     while True:
+    #         try:
+    #             all_boxes.append(pickle.load(f))
+    #         except EOFError:
+    #             break
+    all_boxes = pickle.load(open(det_file, 'rb'))
+else:
+    # all detections are collected into:
+    #    all_boxes[cls][image] = N x 5 array of detections in
+    #    (x1, y1, x2, y2, score)
+    all_boxes = [[[] for _ in range(num_images)]
+                 for _ in range(dataset.num_classes)]
+
+    for i in range(num_images):
+        im, gt, h, w = dataset.pull_item(i)
+
+        x = Variable(im.unsqueeze(0))
+        if args.cuda:
+            x = x.cuda()
+        _t['im_detect'].tic()
+        detections = net(x).data
+        detect_time = _t['im_detect'].toc(average=False)
+
+        # skip j = 0, because it's the background class
+        for j in range(1, detections.size(1)):
+            dets = detections[0, j, :]
+            mask = dets[:, 0].gt(0.).expand(5, dets.size(0)).t()
+            dets = torch.masked_select(dets, mask).view(-1, 5)
+            if dets.dim() == 0:
+                continue
+            boxes = dets[:, 1:]
+            boxes[:, 0] *= w
+            boxes[:, 2] *= w
+            boxes[:, 1] *= h
+            boxes[:, 3] *= h
+            scores = dets[:, 0].cpu().numpy()
+            cls_dets = np.hstack((boxes.cpu().numpy(), scores[:, np.newaxis])) \
+                .astype(np.float32, copy=False)
+            all_boxes[j][i] = cls_dets
+
+        if i % show_freq == 0:
+            print('[{:s}][{:s}]\tim_detect: '
+                  '{:d}/{:d} {:.3f}s'.format(args.experiment_name,
+                                             (os.path.basename(args.trained_model) + _temp + args.sub_folder_suffix),
+                                             i + 1, num_images, detect_time))
+    # save the raw boxes
+    with open(det_file, 'wb') as f:
+        pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
 print('Evaluating detections')
-write_voc_results_file(args.save_folder, all_boxes, dataset)
-do_python_eval(args)
+if dataset.name == 'COCO':
+    res_file = det_file[:-3] + 'json'
+    write_coco_results_file(dataset, all_boxes, res_file)
+    coco_do_detection_eval(dataset, res_file, args.save_folder)
+else:
+    write_voc_results_file(args.save_folder, all_boxes, dataset)
+    do_python_eval(args)

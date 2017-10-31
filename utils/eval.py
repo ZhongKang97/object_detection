@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 from utils.util import ET
 from data.setup_dset import VOC_CLASSES as labelmap
+import json
 
 
 def parse_rec(filename):
@@ -272,3 +273,88 @@ def do_python_eval(opts):
     # print('Results should be very close to the official MATLAB eval code.')
     # print('--------------------------------------------------------------')
 
+
+def _coco_results_one_category(dataset, boxes, cat_id):
+    results = []
+    for im_ind, index in enumerate(dataset.ids):
+        # dets = boxes[im_ind].astype(np.float)
+        dets = np.array(boxes[im_ind], dtype=np.float)
+        if len(dets) == 0:
+            continue
+        scores = dets[:, -1]
+        xs = dets[:, 0]
+        ys = dets[:, 1]
+        ws = dets[:, 2] - xs + 1
+        hs = dets[:, 3] - ys + 1
+        results.extend(
+            [{'image_id': index,
+              'category_id': cat_id,
+              'bbox': [xs[k], ys[k], ws[k], hs[k]],
+              'score': scores[k]} for k in range(dets.shape[0])])
+    return results
+
+
+def write_coco_results_file(dataset, all_boxes, res_file):
+    # [{"image_id": 42,
+    #   "category_id": 18,
+    #   "bbox": [258.15,41.29,348.26,243.78],
+    #   "score": 0.236}, ...]
+    results = []
+    for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
+        if cls == '__background__':
+            continue
+        print('Collecting {} results ({:d}/{:d})'.format(cls, cls_ind, dataset.num_classes - 2))
+        coco_cat_id = dataset.COCO_CLASSES[cls_ind]
+        results.extend(_coco_results_one_category(dataset, all_boxes[cls_ind], coco_cat_id))
+    print('Writing results json to {}'.format(res_file))
+    with open(res_file, 'w') as fid:
+        json.dump(results, fid)
+
+
+def _print_detection_eval_metrics(dataset, coco_eval):
+    IoU_lo_thresh = 0.5
+    IoU_hi_thresh = 0.95
+
+    def _get_thr_ind(coco_eval, thr):
+        ind = np.where((coco_eval.params.iouThrs > thr - 1e-5) &
+                       (coco_eval.params.iouThrs < thr + 1e-5))[0][0]
+        iou_thr = coco_eval.params.iouThrs[ind]
+        assert np.isclose(iou_thr, thr)
+        return ind
+
+    ind_lo = _get_thr_ind(coco_eval, IoU_lo_thresh)
+    ind_hi = _get_thr_ind(coco_eval, IoU_hi_thresh)
+    # precision has dims (iou, recall, cls, area range, max dets)
+    # area range index 0: all area ranges
+    # max dets index 2: 100 per image
+    precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
+    ap_default = np.mean(precision[precision > -1])
+    print(('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] '
+           '~~~~').format(IoU_lo_thresh, IoU_hi_thresh))
+    print('{:.1f}'.format(100 * ap_default))
+    for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
+        if cls == '__background__':
+            continue
+        # minus 1 because of __background__
+        # update: we don't have minus 1 problem
+        # precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind - 1, 0, 2]
+        precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
+        ap = np.mean(precision[precision > -1])
+        print('{:.1f}'.format(100 * ap))
+    print('~~~~ Summary metrics ~~~~')
+    coco_eval.summarize()
+
+
+def coco_do_detection_eval(dataset, res_file, output_dir):
+    ann_type = 'bbox'
+    coco_dt = dataset.coco.loadRes(res_file)
+    from pycocotools.cocoeval import COCOeval
+    coco_eval = COCOeval(dataset.coco, coco_dt)
+    coco_eval.params.useSegm = (ann_type == 'segm')
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    _print_detection_eval_metrics(dataset, coco_eval)
+    eval_file = os.path.join(output_dir, 'coco_det_eval_res.pkl')
+    with open(eval_file, 'wb') as fid:
+        pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+    print('Wrote COCO eval results to: {}'.format(eval_file))

@@ -57,6 +57,7 @@ class Detect(Function):
                 l_mask = c_mask.unsqueeze(1).expand_as(decoded_boxes)
                 boxes = decoded_boxes[l_mask].view(-1, 4)
                 # idx of highest scoring and non-overlapping boxes per class
+                # NMS
                 if self.soft_nms == -1:
                     ids, count = nms(boxes, scores, self.nms_thresh, self.top_k)
                     self.output[i, cl, :count] = \
@@ -66,7 +67,6 @@ class Detect(Function):
                     count = boxes.size(0) if boxes.size(0) < self.top_k else self.top_k
                     new_scores, new_boxes = soft_nms(boxes, scores, self.nms_thresh, self.top_k, type=self.soft_nms)
                     self.output[i, cl, :count] = torch.cat((new_scores.unsqueeze(1), new_boxes), 1)
-
         # flt = self.output.view(-1, 5)
         # _, idx = flt[:, 0].sort(0)
         # _, rank = idx.sort(0)

@@ -5,8 +5,8 @@ from utils.util import *
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--dataset', default='coco', help='[ voc | coco ]')
 parser.add_argument('--experiment_name', default='ssd_base_101')
-parser.add_argument('--trained_model', default='final_v2.pth', type=str)
-# parser.add_argument('--trained_model', default='ssd300_0712_iter_125000.pth', type=str)
+# parser.add_argument('--trained_model', default='final_v2.pth', type=str)
+parser.add_argument('--trained_model', default='ssd512_COCO_iter_155.pth', type=str)
 parser.add_argument('--sub_folder_suffix', default='', type=str)
 
 # model params
@@ -15,9 +15,9 @@ parser.add_argument('--prior_config', default='v2_512', type=str)
 
 # for test
 parser.add_argument('--soft_nms', type=int, default=-1)  # set -1 if not used
-parser.add_argument('--conf_thresh', default=0.005, type=float, help='Detection confidence threshold')
+parser.add_argument('--conf_thresh', default=0.05, type=float, help='Detection confidence threshold')
 parser.add_argument('--top_k', default=300, type=int, help='The Maximum number of box preds to consider in NMS.')
-parser.add_argument('--nms_thresh', default=0.45, type=float)
+parser.add_argument('--nms_thresh', default=0.5, type=float)
 parser.add_argument('--show_freq', default=10, type=int, help='show freq in console')
 
 # runtime and display
@@ -34,7 +34,6 @@ _temp = '' if args.sub_folder_suffix == '' else '_'
 args.save_folder = os.path.join('result', args.experiment_name, args.phase,
                                 (args.trained_model + _temp + args.sub_folder_suffix))
 args.trained_model = os.path.join('result', args.experiment_name, 'train', args.trained_model)
-args.save_folder = os.path.join('result', args.experiment_name, args.phase)
 
 if not os.path.exists(args.save_folder):
     mkdirs(args.save_folder)

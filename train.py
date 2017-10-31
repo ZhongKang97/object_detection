@@ -112,7 +112,7 @@ for iteration in range(start_iter, args.max_iter+1):
         torch.save({
             'state_dict': ssd_net.state_dict(),
             'iteration': iteration,
-        }, '%s/ssd%d_0712_iter_' % (args.save_folder, args.ssd_dim) + repr(iteration) + '.pth')
+        }, '%s/ssd%d_%s_iter_' % (args.save_folder, args.ssd_dim, dataset.name) + repr(iteration) + '.pth')
 
 print('Training done. start_iter / end_iter: {:d}/{:d}'.format(start_iter, args.max_iter))
 torch.save({

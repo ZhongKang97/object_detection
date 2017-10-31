@@ -243,7 +243,7 @@ class COCODetection(data.Dataset):
         self.phase = phase
 
     def __getitem__(self, index):
-        im, gt, _, _ = self.pull_item(index)
+        im, gt, h, w = self.pull_item(index)
 
         return im, gt
 
