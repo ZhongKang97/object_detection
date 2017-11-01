@@ -31,6 +31,7 @@ def adjust_learning_rate(optimizer, step):
     lr = args.lr * decay
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+    return lr
 
 
 dataset = create_dataset(args)
