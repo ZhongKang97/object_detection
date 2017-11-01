@@ -14,7 +14,7 @@ import layers.from_wyang.models.cifar as models
 from utils.from_wyang import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 import shutil
 
-
+use_cuda = torch.cuda.is_available()
 show_freq = 100
 state = {k: v for k, v in args._get_kwargs()}
 # TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
@@ -182,8 +182,8 @@ for epoch in range(args.epochs):
 
     print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-    train_loss, train_acc, train_acc5 = train(train_loader, model, criterion, optimizer, epoch, True)
-    test_loss, test_acc, test_acc5 = test(test_loader, model, criterion, epoch, True)
+    train_loss, train_acc, train_acc5 = train(train_loader, model, criterion, optimizer, epoch, use_cuda)
+    test_loss, test_acc, test_acc5 = test(test_loader, model, criterion, epoch, use_cuda)
 
     # append logger file
     logger.append([int(epoch), state['lr'], train_loss, test_loss,
