@@ -4,9 +4,10 @@ from torch.autograd import Function
 from torch.autograd import Variable
 import torch.nn.init as init
 
+
 class L2Norm(nn.Module):
-    def __init__(self,n_channels, scale):
-        super(L2Norm,self).__init__()
+    def __init__(self, n_channels, scale):
+        super(L2Norm, self).__init__()
         self.n_channels = n_channels
         self.gamma = scale or None
         self.eps = 1e-10
