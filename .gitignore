@@ -1,6 +1,6 @@
 *.tar.gz
 
-data_fuck/cifar-10-batches-py
+data/cifar-10-batches-py
 
 
 
