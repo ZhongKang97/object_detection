@@ -41,7 +41,7 @@ def create_dataset(opts, phase=None):
                 T.ToTensor(),
                 T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
-        dataset = dset.CIFAR10(root='data', train=[phase == 'train'],
+        dataset = dset.CIFAR10(root='data', train=phase == 'train',
                                transform=transform, download=True)
         dataset.name = 'CIFAR10'
         dataset.num_classes = 10

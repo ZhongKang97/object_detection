@@ -172,8 +172,8 @@ criterion = nn.CrossEntropyLoss()
 
 title = 'cifar-10-resnet'
 logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-logger.set_names(['Epoch', 'Learning Rate', 'Train Loss', 'Valid Loss',
-                  'Train Acc.', 'Valid Acc.', 'Train Acc5.', 'Valid Acc5.'])
+logger.set_names(['Epoch', 'Learning Rate', 'Train Loss', 'Test Loss',
+                  'Train Acc.', 'Test Acc.', 'Train Acc5.', 'Test Acc5.'])
 
 best_acc = 0  # best test accuracy
 # train and val/test
@@ -182,14 +182,20 @@ for epoch in range(args.epochs):
 
     print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
 
-    train_loss, train_acc, train_acc5 = train(train_loader, model, criterion, optimizer, epoch, True)
-    test_loss, test_acc, test_acc5 = test(test_loader, model, criterion, epoch, True)
+    train_loss, train_acc, train_acc5 = \
+        train(train_loader, model, criterion, optimizer, epoch, True)
+    if epoch > 100:
+        test_loss, test_acc, test_acc5 = \
+            test(test_loader, model, criterion, epoch, True)
+    else:
+        test_loss, test_acc, test_acc5 = 'n/a', 'n/a', 'n/a'
 
     # append logger file
     logger.append([int(epoch), state['lr'], train_loss, test_loss,
                    train_acc, test_acc, train_acc5, test_acc5])
 
     # save model
+    test_acc = 0 if test_acc == 'n/a' else test_acc
     is_best = test_acc > best_acc
     best_acc = max(test_acc, best_acc)
     save_checkpoint({

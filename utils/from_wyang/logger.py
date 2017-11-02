@@ -57,11 +57,13 @@ class Logger(object):
         self.file.write('\n')
         self.file.flush()
 
-
     def append(self, numbers):
         assert len(self.names) == len(numbers), 'Numbers do not match names'
         for index, num in enumerate(numbers):
-            self.file.write("{0:.6f}".format(num))
+            try:
+                self.file.write("{0:.6f}".format(num))
+            except ValueError:
+                self.file.write("{:s}".format(num))
             self.file.write('\t')
             self.numbers[self.names[index]].append(num)
         self.file.write('\n')
