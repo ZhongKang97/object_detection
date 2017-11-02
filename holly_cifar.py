@@ -11,7 +11,7 @@ from option.train_opt import args   # for cifar we also has test here
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import layers.from_wyang.models.cifar as models
-from utils.from_wyang import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
+from utils.from_wyang import Logger, AverageMeter, accuracy, mkdir_p, savefig
 import shutil
 
 use_cuda = torch.cuda.is_available()
