@@ -82,6 +82,7 @@ class Logger(object):
         if self.file is not None:
             self.file.close()
 
+
 class LoggerMonitor(object):
     '''Load and visualize multiple logs.'''
     def __init__ (self, paths):

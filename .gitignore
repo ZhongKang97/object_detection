@@ -1,9 +1,5 @@
 *.tar.gz
-
 data/cifar-10-batches-py
-
-
-
 *.*~
 *.swp
 *.txt
@@ -135,3 +131,4 @@ test_data_aug.py
 # temp checkout soln
 data/datasets/
 data/ssd_dataloader.py
+

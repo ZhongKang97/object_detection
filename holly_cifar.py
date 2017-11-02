@@ -14,7 +14,7 @@ import layers.from_wyang.models.cifar as models
 from utils.from_wyang import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 import shutil
 
-
+use_cuda = torch.cuda.is_available()
 show_freq = 100
 state = {k: v for k, v in args._get_kwargs()}
 # TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
@@ -164,7 +164,9 @@ train_dset = create_dataset(args, 'train')
 train_loader = data.DataLoader(train_dset, args.test_batch, num_workers=args.num_workers, shuffle=True)
 
 model = models.__dict__['resnet'](num_classes=train_dset.num_classes, depth=50)
-# model = torch.nn.DataParallel(model).cuda()
+if use_cuda and args.deploy:
+    print(args.schedule_cifar)
+    model = torch.nn.DataParallel(model).cuda()
 cudnn.benchmark = True
 
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -184,14 +186,14 @@ for epoch in range(args.epochs):
 
     train_loss, train_acc, train_acc5 = \
         train(train_loader, model, criterion, optimizer, epoch, True)
-    if epoch > 100:
+    if epoch > 140:
         test_loss, test_acc, test_acc5 = \
             test(test_loader, model, criterion, epoch, True)
     else:
         test_loss, test_acc, test_acc5 = 'n/a', 'n/a', 'n/a'
 
     # append logger file
-    logger.append([int(epoch), state['lr'], train_loss, test_loss,
+    logger.append([str(epoch), state['lr'], train_loss, test_loss,
                    train_acc, test_acc, train_acc5, test_acc5])
 
     # save model

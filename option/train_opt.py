@@ -15,32 +15,27 @@ parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained
 parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
 # parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
 
+parser.add_argument('--lr', default=1e-5, type=float, help='initial learning rate')
 parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
-# TODO: in conflict with cifar lr
-# parser.add_argument('--lr', default=1e-5, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
 parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for SGD')
 parser.add_argument('--schedule', default=[80000, 100000, 120000], nargs='+')
 
 # for cifar only
-parser.add_argument('--epochs', default=300)
+parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
-parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
+# parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=100, type=int, metavar='N')
 
 # model params
-# parser.add_argument('--jaccard_threshold', default=0.5, type=float, help='Min Jaccard index for matching')
-# parser.add_argument('--voc_root', default=VOCroot, help='Location of VOC root directory')
 parser.add_argument('--ssd_dim', default=512, type=int)
 parser.add_argument('--prior_config', default='v2_512', type=str)
-# parser.add_argument('--prior_config', default='v2_634', type=str)
 
 # runtime and display
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
-# parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda to train model')
 parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port_id', default=8097, type=int)
 parser.add_argument('--display_id', default=1, type=int)
