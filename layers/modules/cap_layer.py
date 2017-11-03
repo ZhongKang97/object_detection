@@ -36,8 +36,8 @@ class CapLayer(nn.Module):
         self.in_dim = in_dim
         self.num_shared = num_shared
         self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
-        # self.b = Variable(torch.rand(num_out_caps, num_in_caps))  # initial value
-        self.b = Variable(torch.zeros(num_out_caps, num_in_caps))
+        self.b = Variable(torch.rand(num_out_caps, num_in_caps))  # initial value
+        # self.b = Variable(torch.zeros(num_out_caps, num_in_caps))
         self.route_num = route_num
 
     def forward(self, input):
@@ -55,10 +55,13 @@ class CapLayer(nn.Module):
         pred = torch.stack(pred).permute(1, 0, 2, 3, 4).squeeze()  # \hat(s)_j -> 128, 1152, 16
 
         for i in range(self.route_num):
+            # print('b'), print(b[0, 0:3, :])
             c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
+            # print('c'), print(c[0, 0:3, :])
             s = torch.matmul(c, pred)               # 128 x 10 x 16
             v = squash(s)
             delta_b = torch.matmul(pred, v.permute(0, 2, 1)).permute(0, 2, 1)
+            # print('delta_b'), print(delta_b[0, 0:3, :])
             b = torch.add(b, delta_b)
         return v
 
