@@ -35,8 +35,9 @@ class CapLayer(nn.Module):
         super(CapLayer, self).__init__()
         self.in_dim = in_dim
         self.num_shared = num_shared
-        self.W = [nn.Linear(in_dim, out_dim, bias=True) for _ in range(num_shared)]
-        self.b = Variable(torch.zeros(num_out_caps, num_in_caps))  # initial value
+        self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
+        # self.b = Variable(torch.rand(num_out_caps, num_in_caps))  # initial value
+        self.b = Variable(torch.zeros(num_out_caps, num_in_caps))
         self.route_num = route_num
 
     def forward(self, input):

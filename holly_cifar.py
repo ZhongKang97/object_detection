@@ -39,21 +39,19 @@ train_dset = create_dataset(args, 'train')
 train_loader = data.DataLoader(train_dset, args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
-if args.model_cifar == 'resnet':
-    model = models.__dict__['resnet'](num_classes=train_dset.num_classes, depth=50)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                          momentum=args.momentum, weight_decay=args.weight_decay)
-elif args.model_cifar == 'capsule':
-    model = CapsNet(depth=20, num_classes=10, route_num=args.route_num)
-    # criterion = MarginLoss(num_classes=10)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                          momentum=args.momentum, weight_decay=args.weight_decay)
+model = CapsNet(depth=20, num_classes=10,
+                route_num=args.route_num, structure=args.model_cifar)
+# model = models.__dict__['resnet'](num_classes=train_dset.num_classes, depth=50)
+optimizer = optim.SGD(model.parameters(), lr=args.lr,
+                      momentum=args.momentum, weight_decay=args.weight_decay)
+criterion = MarginLoss(num_classes=10) if args.model_cifar == 'capsule' else nn.CrossEntropyLoss()
 
-if use_cuda and args.deploy:
-    print(args.schedule_cifar)
-    model = torch.nn.DataParallel(model).cuda()
+if use_cuda:
+    criterion = criterion.cuda()
+    if args.deploy:
+        model = torch.nn.DataParallel(model).cuda()
+    else:
+        model = model.cuda()
 cudnn.benchmark = True
 
 title = 'cifar-10-resnet'
