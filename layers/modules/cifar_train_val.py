@@ -49,12 +49,12 @@ def train(trainloader, model,
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
 
-        _, ind = outputs[4, :].max(0)
-        print('predict index: {:d}'.format(ind.data[0]))
-        one_sample = outputs[4, :]
-        check = torch.eq(one_sample, one_sample[0])
-        if check.sum().data[0] == len(one_sample):
-            print('output is the same across all classes: {:.4f}\n'.format(one_sample[0].data[0]))
+        # _, ind = outputs[4, :].max(0)
+        # print('predict index: {:d}'.format(ind.data[0]))
+        # one_sample = outputs[4, :]
+        # check = torch.eq(one_sample, one_sample[0])
+        # if check.sum().data[0] == len(one_sample):
+        #     print('output is the same across all classes: {:.4f}\n'.format(one_sample[0].data[0]))
 
         loss = criterion(outputs, targets)
         # measure accuracy and record loss
