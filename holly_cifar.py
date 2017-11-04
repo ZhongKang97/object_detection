@@ -95,8 +95,8 @@ for epoch in range(args.epochs):
     }, is_best, checkpoint=args.checkpoint)
 
 logger.close()
-logger.plot()
-savefig(os.path.join(args.checkpoint, 'log.eps'))
+# logger.plot()
+# savefig(os.path.join(args.checkpoint, 'log.eps'))
 
 print('Best acc:')
 print(best_acc)
