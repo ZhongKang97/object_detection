@@ -82,5 +82,10 @@ class MarginLoss(nn.Module):
         zero = Variable(torch.zeros(1))
         pos_part = torch.max(zero, self.pos - output).pow(2)
         neg_part = torch.max(zero, output - self.neg).pow(2)
-        loss = gt * pos_part + self.lam * (1-gt) * neg_part
+        try:
+            loss = gt * pos_part + self.lam * (1-gt) * neg_part
+        except RuntimeError:
+            print('gt size:'), print(gt.size())
+            print('pos_part:'), print(pos_part.size())
+            print('neg_part:'), print(neg_part.size())
         return loss.sum() / output.size(0)
