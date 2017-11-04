@@ -73,11 +73,9 @@ class CapLayer(nn.Module):
                 # print('b'), print(b[0, 0:3, :])
                 c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
                 # print('c'), print(c[0, 0:3, :])
-
                 temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
                          for zz in range(self.num_out_caps)]
                 s = torch.stack(temp_, dim=1)
-
                 v = squash(s)  # 128 x 10 x 16
                 temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
                          for zz in range(self.num_out_caps)]
