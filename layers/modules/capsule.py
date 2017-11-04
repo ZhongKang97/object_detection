@@ -6,7 +6,7 @@ from layers.modules.cap_layer import CapLayer
 
 
 class CapsNet(nn.Module):
-    def __init__(self, depth, route_num,
+    def __init__(self, depth, opts,
                  num_classes=100, structure='capsule'):
         super(CapsNet, self).__init__()
 
@@ -36,7 +36,8 @@ class CapsNet(nn.Module):
         # capsule module
         self.cap_layer = CapLayer(num_in_caps=32*6*6, num_out_caps=num_classes,
                                   in_dim=8, out_dim=16,
-                                  num_shared=32, route_num=route_num)
+                                  num_shared=32, route_num=opts.route_num,
+                                  b_init=opts.b_init, w_version=opts.w_version)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
