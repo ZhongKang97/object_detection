@@ -6,11 +6,14 @@ import torch
 from utils.from_wyang import AverageMeter, accuracy
 
 
-def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth'):
+def save_checkpoint(state, is_best,
+                    checkpoint='checkpoint', filename='checkpoint.pth'):
     filepath = os.path.join(checkpoint, filename)
     torch.save(state, filepath)
     if is_best:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth'))
+        # save the best model
+        shutil.copyfile(filepath,
+                        os.path.join(checkpoint, 'model_best.pth'))
 
 
 def train(trainloader, model,
@@ -84,7 +87,6 @@ def train(trainloader, model,
 
 def test(testloader, model, criterion, use_cuda,
          show_freq, structure):
-    global best_acc
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -107,11 +109,10 @@ def test(testloader, model, criterion, use_cuda,
 
         # compute output
         outputs = model(inputs)
-        loss = criterion(outputs, targets)
-
-        # measure accuracy and record loss
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
+        loss = criterion(outputs, targets)
+        # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
         losses.update(loss.data[0], inputs.size(0))
         top1.update(prec1[0], inputs.size(0))

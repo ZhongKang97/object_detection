@@ -70,7 +70,7 @@ for epoch in range(args.epochs):
         train(train_loader, model, criterion,
               optimizer, True,
               structure=args.model_cifar, show_freq=show_freq)
-    if epoch > 140:
+    if epoch > 139:
         test_loss, test_acc, test_acc5 = \
             test(test_loader, model, criterion, True,
                  structure=args.model_cifar, show_freq=show_freq)
