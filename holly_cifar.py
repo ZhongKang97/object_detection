@@ -40,7 +40,7 @@ train_loader = data.DataLoader(train_dset, args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
 model = CapsNet(depth=20, num_classes=10,
-                route_num=args.route_num, structure=args.model_cifar)
+                opts=args, structure=args.model_cifar)
 # model = models.__dict__['resnet'](num_classes=train_dset.num_classes, depth=50)
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
@@ -70,6 +70,7 @@ for epoch in range(args.epochs):
         train(train_loader, model, criterion,
               optimizer, True,
               structure=args.model_cifar, show_freq=show_freq)
+
     if epoch > 139:
         test_loss, test_acc, test_acc5 = \
             test(test_loader, model, criterion, True,

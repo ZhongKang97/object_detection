@@ -30,6 +30,9 @@ parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--route_num', default=3, type=int)
+# see 'cap_layer.py' about the explanations of these arguments
+parser.add_argument('--w_version', default='v1', type=str, help='[v0 | v1]')
+parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
 
 # model params
 parser.add_argument('--ssd_dim', default=512, type=int)
