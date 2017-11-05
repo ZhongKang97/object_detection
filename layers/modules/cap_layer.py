@@ -33,13 +33,18 @@ def squash(vec):
 class CapLayer(nn.Module):
     def __init__(self, num_in_caps, num_out_caps,
                  in_dim, out_dim, num_shared,
-                 route_num, b_init, w_version, do_squash=False):
+                 route_num, b_init, w_version,
+                 do_squash=False, look_into_details=False):
         super(CapLayer, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.num_shared = num_shared
+        self.route_num = route_num
         self.w_version = w_version
         self.num_out_caps = num_out_caps
+        self.look_into_details = look_into_details
+        if self.look_into_details:
+            self.which_sample, self.which_j = 0, 3
 
         if w_version == 'v0':
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
@@ -51,19 +56,21 @@ class CapLayer(nn.Module):
             # faster
             self.W = nn.Conv2d(256, num_shared*num_out_caps*out_dim,
                                kernel_size=1, stride=1, groups=num_shared)
-            self.relu = nn.ReLU(True)
+            # self.relu = nn.ReLU(True)
         elif w_version == 'v3':
             # for fair comparison
             self.avgpool = nn.AvgPool2d(6)
             self.fc = nn.Linear(256, 160)
             self.do_squash = do_squash
+
         if b_init == 'rand':
             self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
         elif b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
-        self.route_num = route_num
 
-    def forward(self, input):
+    def forward(self, input, target):
+        if target is not None and self.look_into_details:
+            self.which_j = target[self.which_sample].data[0]
         bs, in_channels, h, w = input.size()
         # assert in_channels == self.num_shared * self.in_dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
@@ -91,22 +98,35 @@ class CapLayer(nn.Module):
                                                  spatial_size, spatial_size).permute(0, 1, 4, 5, 2, 3)
                 pred = raw_output_1.resize(bs,
                                            self.num_shared*spatial_size*spatial_size, self.num_out_caps, self.out_dim)
-                pred = self.relu(pred)
+                # pred = self.relu(pred)  # NO relu here!
             # print('cap W time: {:.4f}'.format(time.time() - start))
 
+            if self.look_into_details:
+                print('u_hat:'), print(pred[self.which_sample, :, self.which_j, :])
             # start = time.time()
             for i in range(self.route_num):
-                # print('b'), print(b[0, 0:3, :])
+
                 c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
-                # print('c'), print(c[0, 0:3, :])
                 temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
                          for zz in range(self.num_out_caps)]
                 s = torch.stack(temp_, dim=1)
-                v = squash(s)  # 128 x 10 x 16
+                v = squash(s)                           # 128 x 10 x 16
                 temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
                          for zz in range(self.num_out_caps)]
                 delta_b = torch.stack(temp_, dim=1).detach()
-                # print('delta_b'), print(delta_b[0, 0:3, :])
+                if self.look_into_details:
+                    print('[{:d}/{:d}] b:'.format(i, self.route_num))
+                    print(b[self.which_sample, self.which_j, :])
+                    print('[{:d}/{:d}] c:'.format(i, self.route_num))
+                    print(c[self.which_sample, self.which_j, :])
+                    print('[{:d}/{:d}] v:'.format(i, self.route_num))
+                    print(v[self.which_sample, self.which_j, :])
+                    print('[{:d}/{:d}] v all classes:'.format(i, self.route_num))
+                    print(v[self.which_sample, :, :].norm(dim=1))
+                    print('[{:d}/{:d}] delta_b:'.format(i, self.route_num))
+                    print(delta_b[self.which_sample, self.which_j, :])
+                    print('\n')
+
                 b = torch.add(b, delta_b)
             # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
         elif self.w_version == 'v0':
