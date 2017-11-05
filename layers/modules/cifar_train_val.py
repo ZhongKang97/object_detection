@@ -48,7 +48,7 @@ def train(trainloader, model,
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs)  # 128 x 10 x 16
+        outputs = model(inputs, targets)  # 128 x 10 x 16
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
 

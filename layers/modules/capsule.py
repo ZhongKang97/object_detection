@@ -39,7 +39,8 @@ class CapsNet(nn.Module):
                                   in_dim=8, out_dim=16,
                                   num_shared=32, route_num=opts.route_num,
                                   b_init=opts.b_init, w_version=opts.w_version,
-                                  do_squash=opts.do_squash)
+                                  do_squash=opts.do_squash,
+                                  look_into_details=opts.look_into_details)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -53,7 +54,7 @@ class CapsNet(nn.Module):
                 m.bias.data.zero_()
         # print('passed init')
 
-    def forward(self, x):
+    def forward(self, x, target=None):
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -67,9 +68,9 @@ class CapsNet(nn.Module):
         if self.structure == 'capsule':
             # print('conv time: {:.4f}'.format(time.time() - start))
             # start = time.time()
-            x = self.cap_layer(x)
+            x = self.cap_layer(x, target)
             # print('cap total time: {:.4f}\n'.format(time.time() - start))
-        else:
+        elif self.structure == 'resnet':
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fc(x)
