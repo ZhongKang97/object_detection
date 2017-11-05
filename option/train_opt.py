@@ -30,6 +30,7 @@ parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
+parser.add_argument('--cap_model', default='v1', type=str, help='only valid when model_cifar is [capsule]')
 parser.add_argument('--use_CE_loss', action='store_true')
 parser.add_argument('--route_num', default=3, type=int)
 # see 'cap_layer.py' about the explanations of these arguments

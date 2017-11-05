@@ -2,7 +2,7 @@
 import math
 import torch.nn as nn
 from layers.from_wyang.models.cifar.resnet import BasicBlock, Bottleneck
-from layers.modules.cap_layer import CapLayer
+from layers.modules.cap_layer import CapLayer, CapLayer2
 import time
 
 
@@ -16,6 +16,7 @@ class CapsNet(nn.Module):
         assert (depth - 2) % 6 == 0, 'depth should be 6n+2'
         n = (depth - 2) / 6
         block = Bottleneck if depth >= 44 else BasicBlock
+        self.cap_model = opts.cap_model
         self.structure = structure
         self.inplanes = 16
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1, bias=False)
@@ -41,9 +42,30 @@ class CapsNet(nn.Module):
                                   b_init=opts.b_init, w_version=opts.w_version,
                                   do_squash=opts.do_squash,
                                   look_into_details=opts.look_into_details)
+        if self.cap_model == 'v1':
+            self.cap_dim = 20
+            self.tranfer1 = nn.Sequential(*[
+                nn.Conv2d(16, int(16*self.cap_dim), kernel_size=3, padding=1, stride=1),
+                nn.BatchNorm2d(int(16*self.cap_dim)),
+                nn.ReLU(True)
+            ])
+            # (16x20) x 32 x 32 -> (16x20) x 32 x 32
+            self.cap1 = CapLayer2(in_dim=self.cap_dim, out_dim=self.cap_dim,
+                                  in_channel=int(16*self.cap_dim),
+                                  spatial_size=32,
+                                  route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+            # this is an option
+            self.tranfer1_1 = nn.ModuleList([
+                nn.Conv2d(int(16*self.cap_dim), 16, kernel_size=1, groups=16),
+                nn.BatchNorm2d(16),
+                nn.ReLU(True)
+            ])
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                if n == 0:
+                    print('fuck yourself')
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
@@ -59,12 +81,15 @@ class CapsNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)            # 32x32
-        x = self.layer1(x)          # 32x32
-        x = self.layer2(x)          # 16x16
-        x = self.layer3(x)          # bs x 256 x 8 x 8
+        x = self.layer1(x)          # 16 x 32 x 32
+        if self.cap_model == 'v1':
+            x = self.tranfer1(x)
+            x = self.cap1(x)
+        x = self.layer2(x)          # 32 x 16 x 16
+        x = self.layer3(x)          # bs x 64(for depth=20) x 8 x 8
         x = self.tranfer_conv(x)
         x = self.tranfer_bn(x)
-        x = self.tranfer_relu(x)    # bs x 256 x 6 x 6
+        x = self.tranfer_relu(x)    # bs x 64 x 6 x 6
         if self.structure == 'capsule':
             # print('conv time: {:.4f}'.format(time.time() - start))
             # start = time.time()

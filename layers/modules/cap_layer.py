@@ -32,6 +32,9 @@ def squash(vec):
 
 
 class CapLayer(nn.Module):
+    """
+        Convolutional Capsule Layer
+    """
     def __init__(self, num_in_caps, num_out_caps,
                  in_dim, out_dim, num_shared,
                  route_num, b_init, w_version,
@@ -186,7 +189,8 @@ class CapLayer(nn.Module):
                 print('no target input, just pick up a random j, which_j is: {:d}'.format(self.which_j))
 
         if self.look_into_details:
-            print('u_hat:'), print(pred[self.which_sample, :, self.which_j, :])
+            print('u_hat:')
+            print(pred[self.which_sample, :, self.which_j, :])
         # start all over again
         if self.look_into_details:
             b = Variable(torch.zeros(b.size()), requires_grad=False)
@@ -219,6 +223,72 @@ class CapLayer(nn.Module):
                 print(delta_b[self.which_sample, self.which_j, :])
                 print('\n')
         # END of debug
+
+        return v
+
+
+class CapLayer2(nn.Module):
+    """
+        Convolutional Capsule Layer
+    """
+    def __init__(self, in_dim, out_dim,
+                 in_channel, spatial_size,
+                 route_num, b_init, w_version):
+        super(CapLayer2, self).__init__()
+
+        num_shared = in_channel / in_dim
+        num_in_caps = spatial_size * spatial_size * num_shared
+        num_out_caps = num_in_caps
+
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        self.num_shared = num_shared
+        self.route_num = route_num
+        self.w_version = w_version
+        self.num_in_caps = num_in_caps
+        self.num_out_caps = num_out_caps
+
+        if w_version == 'v2':
+            # faster
+            self.W = nn.Conv2d(in_channel, num_shared*num_shared*out_dim,
+                               kernel_size=1, stride=1, groups=num_shared)
+
+        if b_init == 'rand':
+            self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
+        elif b_init == 'zero':
+            self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
+
+    def forward(self, x):
+
+        bs, _, h, w = x.size()
+        b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
+
+        raw_output = self.W(x)
+        # bs x 5120 x 6 x 6 -> bs x 32 x 10 x 16 x 6 x 6 -> bs x 32 x 6 x 6 x 10 x 16
+        spatial_size = raw_output.size(2)
+        raw_output_1 = raw_output.resize(bs,
+                                         self.num_shared, self.num_out_caps, self.out_dim,
+                                         spatial_size, spatial_size).permute(0, 1, 4, 5, 2, 3)
+        pred = raw_output_1.resize(bs,
+                                   self.num_shared*spatial_size*spatial_size, self.num_out_caps, self.out_dim)
+
+        # print('cap W time: {:.4f}'.format(time.time() - start))
+
+        # routing starts
+        # start = time.time()
+        for i in range(self.route_num):
+
+            c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
+            temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
+                     for zz in range(self.num_out_caps)]
+            s = torch.stack(temp_, dim=1)
+            v = squash(s)                           # 128 x 10 x 16
+            temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
+                     for zz in range(self.num_out_caps)]
+            delta_b = torch.stack(temp_, dim=1).detach()
+            b = torch.add(b, delta_b)
+        # routing ends
+        # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
 
         return v
 
