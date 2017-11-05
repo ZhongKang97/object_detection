@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import time
+import numpy as np
 
 
 def softmax_dim(input, axis=1):
@@ -34,8 +35,12 @@ class CapLayer(nn.Module):
     def __init__(self, num_in_caps, num_out_caps,
                  in_dim, out_dim, num_shared,
                  route_num, b_init, w_version,
-                 do_squash=False, look_into_details=False):
+                 do_squash=False, look_into_details=False,
+                 has_relu_in_W=False):
         super(CapLayer, self).__init__()
+        self.has_relu_in_W = has_relu_in_W
+        # TODO: this is an internal argument
+        self.FIND_DIFF = False
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.num_shared = num_shared
@@ -43,8 +48,7 @@ class CapLayer(nn.Module):
         self.w_version = w_version
         self.num_out_caps = num_out_caps
         self.look_into_details = look_into_details
-        if self.look_into_details:
-            self.which_sample, self.which_j = 0, 3
+        self.which_sample, self.which_j = 0, 0
 
         if w_version == 'v0':
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
@@ -56,7 +60,8 @@ class CapLayer(nn.Module):
             # faster
             self.W = nn.Conv2d(256, num_shared*num_out_caps*out_dim,
                                kernel_size=1, stride=1, groups=num_shared)
-            # self.relu = nn.ReLU(True)
+            if self.has_relu_in_W:
+                self.relu = nn.ReLU(True)
         elif w_version == 'v3':
             # for fair comparison
             self.avgpool = nn.AvgPool2d(6)
@@ -68,12 +73,16 @@ class CapLayer(nn.Module):
         elif b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
 
-    def forward(self, input, target):
-        if target is not None and self.look_into_details:
-            self.which_j = target[self.which_sample].data[0]
+    def forward(self, input, target, curr_iter):
+
         bs, in_channels, h, w = input.size()
         # assert in_channels == self.num_shared * self.in_dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
+
+        if self.FIND_DIFF:
+            pred_list = []
+            pred_list.extend(list(range(bs)))
+            pred_list.extend(target.data)
 
         if self.w_version == 'v1' or self.w_version == 'v2':
             # start = time.time()
@@ -98,11 +107,11 @@ class CapLayer(nn.Module):
                                                  spatial_size, spatial_size).permute(0, 1, 4, 5, 2, 3)
                 pred = raw_output_1.resize(bs,
                                            self.num_shared*spatial_size*spatial_size, self.num_out_caps, self.out_dim)
-                # pred = self.relu(pred)  # NO relu here!
+                if self.has_relu_in_W:
+                    pred = self.relu(pred)
             # print('cap W time: {:.4f}'.format(time.time() - start))
 
-            if self.look_into_details:
-                print('u_hat:'), print(pred[self.which_sample, :, self.which_j, :])
+            # routing starts
             # start = time.time()
             for i in range(self.route_num):
 
@@ -114,21 +123,29 @@ class CapLayer(nn.Module):
                 temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
                          for zz in range(self.num_out_caps)]
                 delta_b = torch.stack(temp_, dim=1).detach()
-                if self.look_into_details:
-                    print('[{:d}/{:d}] b:'.format(i, self.route_num))
-                    print(b[self.which_sample, self.which_j, :])
-                    print('[{:d}/{:d}] c:'.format(i, self.route_num))
-                    print(c[self.which_sample, self.which_j, :])
-                    print('[{:d}/{:d}] v:'.format(i, self.route_num))
-                    print(v[self.which_sample, self.which_j, :])
-                    print('[{:d}/{:d}] v all classes:'.format(i, self.route_num))
-                    print(v[self.which_sample, :, :].norm(dim=1))
-                    print('[{:d}/{:d}] delta_b:'.format(i, self.route_num))
-                    print(delta_b[self.which_sample, self.which_j, :])
+                if self.FIND_DIFF:
+                    v_all_classes = v.norm(dim=2)
+                    _, curr_pred = torch.max(v_all_classes, 1)
+                    pred_list.extend(curr_pred.data)
+                b = torch.add(b, delta_b)
+            # routing ends
+            # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
+
+            if self.FIND_DIFF:
+                temp = np.asarray(pred_list)
+                temp = np.resize(temp, (self.route_num+2, bs)).transpose()  # 128 x 5
+                predict_ = temp[:, 2:]
+                check_ = np.sum((predict_ - predict_[:, 0].reshape(bs, 1)), axis=1)
+                diff_ind = np.nonzero(check_)[0]
+                print('curr_iter {:d}:'.format(curr_iter))
+                if diff_ind.shape == (0,):
+                    HAS_DIFF = False
+                    print('no difference prediction during routing!')
+                else:
+                    HAS_DIFF = True
+                    print(temp[diff_ind, :])
                     print('\n')
 
-                b = torch.add(b, delta_b)
-            # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
         elif self.w_version == 'v0':
             input = input.view(bs, self.num_shared, -1, self.in_dim)
             groups = input.chunk(self.num_shared, dim=1)
@@ -154,6 +171,55 @@ class CapLayer(nn.Module):
             v = x.resize(bs, self.num_out_caps, self.out_dim)
             if self.do_squash:
                 v = squash(v)
+
+        # FOR debug, see the detailed values of b, c, v, delta_b
+        if self.FIND_DIFF and HAS_DIFF:
+            self.which_sample = diff_ind[0]
+        if self.FIND_DIFF or self.look_into_details:
+            print('sample index is: {:d}'.format(self.which_sample))
+        if target is not None:
+            self.which_j = target[self.which_sample].data[0]
+            if self.look_into_details:
+                print('target is: {:d} (also which_j)'.format(self.which_j))
+        else:
+            if self.look_into_details:
+                print('no target input, just pick up a random j, which_j is: {:d}'.format(self.which_j))
+
+        if self.look_into_details:
+            print('u_hat:'), print(pred[self.which_sample, :, self.which_j, :])
+        # start all over again
+        if self.look_into_details:
+            b = Variable(torch.zeros(b.size()), requires_grad=False)
+            for i in range(self.route_num):
+
+                c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
+                temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
+                         for zz in range(self.num_out_caps)]
+                s = torch.stack(temp_, dim=1)
+                v = squash(s)                           # 128 x 10 x 16
+                temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
+                         for zz in range(self.num_out_caps)]
+                delta_b = torch.stack(temp_, dim=1).detach()
+                if self.FIND_DIFF:
+                    v_all_classes = v.norm(dim=2)
+                    _, curr_pred = torch.max(v_all_classes, 1)
+                    pred_list.extend(curr_pred.data)
+                b = torch.add(b, delta_b)
+                print('[{:d}/{:d}] b:'.format(i, self.route_num))
+                print(b[self.which_sample, self.which_j, :])
+                print('[{:d}/{:d}] c:'.format(i, self.route_num))
+                print(c[self.which_sample, self.which_j, :])
+                print('[{:d}/{:d}] v:'.format(i, self.route_num))
+                print(v[self.which_sample, self.which_j, :])
+
+                print('[{:d}/{:d}] v all classes:'.format(i, self.route_num))
+                print(v[self.which_sample, :, :].norm(dim=1))
+
+                print('[{:d}/{:d}] delta_b:'.format(i, self.route_num))
+                print(delta_b[self.which_sample, self.which_j, :])
+                print('\n')
+        # END of debug
+
         return v
 
 
