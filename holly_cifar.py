@@ -70,7 +70,7 @@ best_acc = 0  # best test accuracy
 # train and test
 if args.test_only:
     test_loss, test_acc, test_acc5 = \
-            test(test_loader, model, criterion, True,
+            test(test_loader, model, criterion, use_cuda,
                  structure=args.model_cifar, show_freq=show_freq)
     print('test acc is {:.4f}'.format(test_acc))
 else:
@@ -79,12 +79,12 @@ else:
         print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
         train_loss, train_acc, train_acc5 = \
             train(train_loader, model, criterion,
-                  optimizer, True,
+                  optimizer, use_cuda,
                   structure=args.model_cifar, show_freq=show_freq)
 
         if epoch > 139:
             test_loss, test_acc, test_acc5 = \
-                test(test_loader, model, criterion, True,
+                test(test_loader, model, criterion, use_cuda,
                      structure=args.model_cifar, show_freq=show_freq)
         else:
             test_loss, test_acc, test_acc5 = 'n/a', 'n/a', 'n/a'
