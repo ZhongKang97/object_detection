@@ -3,6 +3,7 @@ import math
 import torch.nn as nn
 from layers.from_wyang.models.cifar.resnet import BasicBlock, Bottleneck
 from layers.modules.cap_layer import CapLayer
+import time
 
 
 class CapsNet(nn.Module):
@@ -52,6 +53,7 @@ class CapsNet(nn.Module):
         # print('passed init')
 
     def forward(self, x):
+        # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)    # 32x32
@@ -63,13 +65,17 @@ class CapsNet(nn.Module):
         if self.structure == 'capsule':
             x = self.tranfer_bn(x)
             x = self.tranfer_relu(x)
+            # print('conv time: {:.4f}'.format(time.time() - start))
+            # start = time.time()
             x = self.cap_layer(x)
+            # print('cap total time: {:.4f}\n'.format(time.time() - start))
         else:
             x = self.tranfer_bn(x)
             x = self.tranfer_relu(x)
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fc(x)
+
         return x
 
     def _make_layer(self, block, planes, blocks, stride=1):
