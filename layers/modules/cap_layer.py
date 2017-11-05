@@ -32,7 +32,8 @@ def squash(vec):
 
 class CapLayer(nn.Module):
     def __init__(self, num_in_caps, num_out_caps,
-                 in_dim, out_dim, num_shared, route_num, b_init, w_version):
+                 in_dim, out_dim, num_shared,
+                 route_num, b_init, w_version, do_squash=False):
         super(CapLayer, self).__init__()
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -51,6 +52,11 @@ class CapLayer(nn.Module):
             self.W = nn.Conv2d(256, num_shared*num_out_caps*out_dim,
                                kernel_size=1, stride=1, groups=num_shared)
             self.relu = nn.ReLU(True)
+        elif w_version == 'v3':
+            # for fair comparison
+            self.avgpool = nn.AvgPool2d(6)
+            self.fc = nn.Linear(256, 160)
+            self.do_squash = do_squash
         if b_init == 'rand':
             self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
         elif b_init == 'zero':
@@ -76,7 +82,7 @@ class CapLayer(nn.Module):
                 # pred: [128, 1152, 10, 16]
                 pred = pred.resize(pred.size(0), int(pred.size(1)/self.num_out_caps),
                                    self.num_out_caps, pred.size(2))
-            else:
+            elif self.w_version == 'v2':
                 raw_output = self.W(input)
                 # bs x 5120 x 6 x 6 -> bs x 32 x 10 x 16 x 6 x 6 -> bs x 32 x 6 x 6 x 10 x 16
                 spatial_size = raw_output.size(2)
@@ -121,6 +127,13 @@ class CapLayer(nn.Module):
                 delta_b = torch.matmul(pred, v.permute(0, 2, 1)).permute(0, 2, 1)
                 # print('delta_b'), print(delta_b[0, 0:3, :])
                 b = torch.add(b, delta_b)
+        elif self.w_version == 'v3':
+            x = self.avgpool(input)
+            x = x.view(x.size(0), -1)
+            x = self.fc(x)
+            v = x.resize(bs, self.num_out_caps, self.out_dim)
+            if self.do_squash:
+                v = squash(v)
         return v
 
 
