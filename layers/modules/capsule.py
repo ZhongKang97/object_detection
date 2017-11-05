@@ -38,7 +38,8 @@ class CapsNet(nn.Module):
         self.cap_layer = CapLayer(num_in_caps=32*6*6, num_out_caps=num_classes,
                                   in_dim=8, out_dim=16,
                                   num_shared=32, route_num=opts.route_num,
-                                  b_init=opts.b_init, w_version=opts.w_version)
+                                  b_init=opts.b_init, w_version=opts.w_version,
+                                  do_squash=opts.do_squash)
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -47,7 +48,7 @@ class CapsNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
-                print('linear layer!')
+                # print('linear layer!')
                 m.weight.data.normal_()
                 m.bias.data.zero_()
         # print('passed init')
@@ -56,26 +57,22 @@ class CapsNet(nn.Module):
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)    # 32x32
-
-        x = self.layer1(x)  # 32x32
-        x = self.layer2(x)  # 16x16
-        x = self.layer3(x)  # bs x 256 x 8 x 8
+        x = self.relu(x)            # 32x32
+        x = self.layer1(x)          # 32x32
+        x = self.layer2(x)          # 16x16
+        x = self.layer3(x)          # bs x 256 x 8 x 8
         x = self.tranfer_conv(x)
+        x = self.tranfer_bn(x)
+        x = self.tranfer_relu(x)    # bs x 256 x 6 x 6
         if self.structure == 'capsule':
-            x = self.tranfer_bn(x)
-            x = self.tranfer_relu(x)
             # print('conv time: {:.4f}'.format(time.time() - start))
             # start = time.time()
             x = self.cap_layer(x)
             # print('cap total time: {:.4f}\n'.format(time.time() - start))
         else:
-            x = self.tranfer_bn(x)
-            x = self.tranfer_relu(x)
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fc(x)
-
         return x
 
     def _make_layer(self, block, planes, blocks, stride=1):
