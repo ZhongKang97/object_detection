@@ -15,7 +15,7 @@ parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained
 parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
 # parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
 
-parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
+parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
 parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
@@ -31,7 +31,7 @@ parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--route_num', default=3, type=int)
 # see 'cap_layer.py' about the explanations of these arguments
-parser.add_argument('--w_version', default='v1', type=str, help='[v0 | v1]')
+parser.add_argument('--w_version', default='v2', type=str, help='[v0 | v1]')
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
 
 # model params
