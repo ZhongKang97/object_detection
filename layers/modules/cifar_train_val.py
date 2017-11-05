@@ -3,7 +3,18 @@ import os
 import time
 import shutil
 import torch
+import collections
 from utils.from_wyang import AverageMeter, accuracy
+
+
+def load_weights(opts, model):
+    print('test only mode, loading weights ...')
+    checkpoints = torch.load(opts.cifar_model)
+    print('best accu is: {:.4f}\n'.format(checkpoints['best_acc']))
+    weights = checkpoints['state_dict']
+    weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
+    model.load_state_dict(weights_new)
+    return model
 
 
 def save_checkpoint(state, is_best,
@@ -108,7 +119,7 @@ def test(testloader, model, criterion, use_cuda,
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs)
+        outputs = model(inputs, targets, batch_idx)
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
         loss = criterion(outputs, targets)

@@ -5,7 +5,7 @@ from utils.util import *
 parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training')
 parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
-parser.add_argument('--experiment_name', default='cifar_101')
+parser.add_argument('--experiment_name', default='cifar_base_104')
 parser.add_argument('--deploy', action='store_true')
 
 # training config
@@ -23,18 +23,21 @@ parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for S
 parser.add_argument('--schedule', default=[80000, 100000, 120000], nargs='+')
 
 # for cifar only
+parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
+parser.add_argument('--use_CE_loss', action='store_false')
 parser.add_argument('--route_num', default=3, type=int)
 # see 'cap_layer.py' about the explanations of these arguments
 parser.add_argument('--w_version', default='v2', type=str, help='[v0 | v1, ...]')
 parser.add_argument('--look_into_details', action='store_true')
+parser.add_argument('--has_relu_in_W', action='store_true')
 # squash is much better
-parser.add_argument('--do_squash', action='store_true', help='for w_v3')
+parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone')
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
 
 # model params
@@ -70,6 +73,8 @@ if args.dataset == 'cifar':
     args.checkpoint = os.path.join('result', args.experiment_name)
     if not os.path.exists(args.checkpoint):
         mkdirs(args.checkpoint)
+    if args.test_only:
+        args.cifar_model = os.path.join(args.checkpoint, 'checkpoint.pth')
 else:
     if not os.path.exists(args.save_folder):
         mkdirs(args.save_folder)

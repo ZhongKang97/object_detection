@@ -54,7 +54,7 @@ class CapsNet(nn.Module):
                 m.bias.data.zero_()
         # print('passed init')
 
-    def forward(self, x, target=None):
+    def forward(self, x, target=None, curr_iter=0):
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -68,7 +68,7 @@ class CapsNet(nn.Module):
         if self.structure == 'capsule':
             # print('conv time: {:.4f}'.format(time.time() - start))
             # start = time.time()
-            x = self.cap_layer(x, target)
+            x = self.cap_layer(x, target, curr_iter)
             # print('cap total time: {:.4f}\n'.format(time.time() - start))
         elif self.structure == 'resnet':
             x = self.avgpool(x)
