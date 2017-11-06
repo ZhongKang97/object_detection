@@ -2,7 +2,7 @@
 import math
 import torch.nn as nn
 from layers.from_wyang.models.cifar.resnet import BasicBlock, Bottleneck
-from layers.modules.cap_layer import CapLayer, CapLayer2
+from layers.modules.cap_layer import CapLayer, CapLayer2, squash
 import time
 
 
@@ -19,20 +19,20 @@ class CapsNet(nn.Module):
         self.cap_model = opts.cap_model
         self.structure = structure
         self.inplanes = 16
+        self.skip_pre_squash = opts.skip_pre_squash
+        self.skip_pre_transfer = opts.skip_pre_transfer
+
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 16, n)
         self.layer2 = self._make_layer(block, 32, n, stride=2)
         self.layer3 = self._make_layer(block, 64, n, stride=2)
-        # self.tranfer_conv = nn.ModuleList([
-        #         nn.Conv2d(256, 256, kernel_size=3, bias=False),
-        #         nn.BatchNorm2d(256), nn.ReLU(True)])
         channel_in = 256 if depth == 50 else 64
         self.tranfer_conv = nn.Conv2d(channel_in, 256, kernel_size=3)  # 256x8x8 -> 256x6x6
-        # ablation study here
         self.tranfer_bn = nn.BatchNorm2d(256)
         self.tranfer_relu = nn.ReLU(True)
+        # ablation study here
         self.avgpool = nn.AvgPool2d(6)
         self.fc = nn.Linear(256, num_classes)
         # capsule module
@@ -43,29 +43,52 @@ class CapsNet(nn.Module):
                                   do_squash=opts.do_squash,
                                   look_into_details=opts.look_into_details)
         if self.cap_model == 'v1':
-            self.cap_dim = 20
-            self.tranfer1 = nn.Sequential(*[
-                nn.Conv2d(16, int(16*self.cap_dim), kernel_size=3, padding=1, stride=1),
-                nn.BatchNorm2d(int(16*self.cap_dim)),
+            self.cap_dim_1 = 16
+            # transfer convolution to capsule
+            self.transfer1_1 = nn.Sequential(*[
+                nn.Conv2d(16, 16, kernel_size=3, padding=1),
+                # nn.BatchNorm2d(int(16*self.cap_dim)),
+                # nn.ReLU(True)
+            ])
+            self.cap1 = CapLayer2(16, self.cap_dim_1, 32, 16,
+                                  route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+            # transfer capsule to convolution
+            self.transfer1_2 = nn.Sequential(*[
+                nn.ConvTranspose2d(self.cap_dim_1, 16, kernel_size=3,
+                                   padding=1, stride=2, output_padding=1),
+                nn.BatchNorm2d(16),
                 nn.ReLU(True)
             ])
-            # (16x20) x 32 x 32 -> (16x20) x 32 x 32
-            self.cap1 = CapLayer2(in_dim=self.cap_dim, out_dim=self.cap_dim,
-                                  in_channel=int(16*self.cap_dim),
-                                  spatial_size=32,
+
+            self.cap_dim_2 = 32
+            self.transfer2_1 = nn.Sequential(*[
+                nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            ])
+            self.cap2 = CapLayer2(32, self.cap_dim_2, 16, 8,
                                   route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
-            # this is an option
-            self.tranfer1_1 = nn.ModuleList([
-                nn.Conv2d(int(16*self.cap_dim), 16, kernel_size=1, groups=16),
-                nn.BatchNorm2d(16),
+            self.transfer2_2 = nn.Sequential(*[
+                nn.ConvTranspose2d(self.cap_dim_2, 32, kernel_size=3,
+                                   padding=1, stride=2, output_padding=1),
+                nn.BatchNorm2d(32),
+                nn.ReLU(True)
+            ])
+
+            self.cap_dim_3 = 64
+            self.transfer3_1 = nn.Sequential(*[
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            ])
+            self.cap3 = CapLayer2(64, self.cap_dim_3, 8, 4,
+                                  route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+            self.transfer3_2 = nn.Sequential(*[
+                nn.ConvTranspose2d(self.cap_dim_3, 64, kernel_size=3,
+                                   padding=1, stride=2, output_padding=1),
+                nn.BatchNorm2d(64),
                 nn.ReLU(True)
             ])
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                if n == 0:
-                    print('fuck yourself')
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
@@ -80,25 +103,49 @@ class CapsNet(nn.Module):
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)            # 32x32
-        x = self.layer1(x)          # 16 x 32 x 32
+        x = self.relu(x)
+        x = self.layer1(x)                  # 16 x 32 x 32
+        # if self.cap_model == 'v1':
+        #     x = self.transfer1_1(x)
+        #     # do squash first
+        #     x = self._do_squash(x)
+        #     x = self.cap1(x)
+        #     x = self.transfer1_2(x)
+        x = self.layer2(x)                  # 32 x 16 x 16
+        # if self.cap_model == 'v1':
+        #     x = self.transfer2_1(x)
+        #     x = self._do_squash(x)
+        #     x = self.cap2(x)
+        #     x = self.transfer2_2(x)
+        x = self.layer3(x)                  # bs x 64(for depth=20) x 8 x 8
         if self.cap_model == 'v1':
-            x = self.tranfer1(x)
-            x = self.cap1(x)
-        x = self.layer2(x)          # 32 x 16 x 16
-        x = self.layer3(x)          # bs x 64(for depth=20) x 8 x 8
+            if not self.skip_pre_transfer:
+                x = self.transfer3_1(x)
+            if not self.skip_pre_squash:
+                x = self._do_squash(x)
+            x = self.cap3(x)
+            x = self.transfer3_2(x)
+
         x = self.tranfer_conv(x)
         x = self.tranfer_bn(x)
-        x = self.tranfer_relu(x)    # bs x 64 x 6 x 6
+        x = self.tranfer_relu(x)            # bs x 64 x 6 x 6
         if self.structure == 'capsule':
             # print('conv time: {:.4f}'.format(time.time() - start))
-            # start = time.time()
+            start = time.time()
             x = self.cap_layer(x, target, curr_iter)
-            # print('cap total time: {:.4f}\n'.format(time.time() - start))
+            # print('last cap total time: {:.4f}'.format(time.time() - start))
         elif self.structure == 'resnet':
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fc(x)
+        return x
+
+    def _do_squash(self, x):
+        spatial_size = x.size(2)
+        input_channel = x.size(1)
+        x = x.resize(x.size(0), x.size(1), int(spatial_size**2)).permute(0, 2, 1)
+        x = squash(x)
+        x = x.permute(0, 2, 1).resize(x.size(0), input_channel, spatial_size, spatial_size)
         return x
 
     def _make_layer(self, block, planes, blocks, stride=1):

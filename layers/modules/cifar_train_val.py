@@ -78,12 +78,14 @@ def train(trainloader, model,
         top5.update(prec5[0], inputs.size(0))
 
         # compute gradient and do SGD step
+        start = time.time()
         optimizer.zero_grad()
         if structure == 'capsule':
             loss.backward(retain_graph=False)
         else:
             loss.backward()
         optimizer.step()
+        # print('iter bp time: {:.4f}\n'.format(time.time()-start))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
