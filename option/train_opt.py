@@ -15,7 +15,7 @@ parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained
 parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
 # parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
 
-parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
+parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
 parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
@@ -31,7 +31,7 @@ parser.add_argument('--train_batch', default=64, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 # v1 is the newly added capsule network
-parser.add_argument('--cap_model', default='v1', type=str, help='only valid when model_cifar is [capsule]')
+parser.add_argument('--cap_model', default='v4', type=str, help='only valid when model_cifar is [capsule]')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')
 parser.add_argument('--use_CE_loss', action='store_true')
