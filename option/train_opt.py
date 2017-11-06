@@ -27,13 +27,16 @@ parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
-parser.add_argument('--train_batch', default=128, type=int, metavar='N')
+parser.add_argument('--train_batch', default=64, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
+# v1 is the newly added capsule network
 parser.add_argument('--cap_model', default='v1', type=str, help='only valid when model_cifar is [capsule]')
+parser.add_argument('--skip_pre_transfer', action='store_true')
+parser.add_argument('--skip_pre_squash', action='store_true')
 parser.add_argument('--use_CE_loss', action='store_true')
 parser.add_argument('--route_num', default=3, type=int)
-# see 'cap_layer.py' about the explanations of these arguments
+# see 'cap_layer.py' about the explanations of the following arguments
 parser.add_argument('--w_version', default='v2', type=str, help='[v0 | v1, ...]')
 parser.add_argument('--look_into_details', action='store_true')
 parser.add_argument('--has_relu_in_W', action='store_true')
