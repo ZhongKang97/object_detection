@@ -10,14 +10,12 @@ from utils.from_wyang import Logger, savefig
 from layers.modules.capsule import CapsNet
 from layers.modules.cap_layer import MarginLoss
 from layers.modules.cifar_train_val import *
+from utils.visualizer import Visualizer
 
 use_cuda = torch.cuda.is_available()
 show_freq = 10
 state = {k: v for k, v in args._get_kwargs()}
-# TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
-if args.visdom:
-    import visdom
-    vis = visdom.Visdom(port=args.port_id, env=args.experiment_name)
+vis = Visualizer(args)
 
 
 def adjust_learning_rate(optimizer, epoch):
