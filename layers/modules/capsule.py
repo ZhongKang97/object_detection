@@ -20,6 +20,7 @@ class CapsNet(nn.Module):
             self.cap_model = opts.cap_model
         else:
             self.cap_model = 'v0'
+        self.cap_N = opts.cap_N
         self.structure = structure
         self.inplanes = 16
         self.skip_pre_squash = opts.skip_pre_squash
@@ -45,7 +46,7 @@ class CapsNet(nn.Module):
                                   b_init=opts.b_init, w_version=opts.w_version,
                                   do_squash=opts.do_squash,
                                   look_into_details=opts.look_into_details)
-        if self.cap_model == 'v1' or self.cap_model == 'v2':
+        if self.cap_model == 'v1' or self.cap_model == 'v2' or self.cap_model == 'v5':
             self.cap_dim_1 = 16
             # transfer convolution to capsule
             self.transfer1_1 = nn.Sequential(*[
@@ -88,7 +89,7 @@ class CapsNet(nn.Module):
                 nn.BatchNorm2d(64),
                 nn.ReLU(True)
             ])
-        if self.cap_model == 'v2':
+        if self.cap_model == 'v2' or self.cap_model == 'v5':
             self.cap_dim_4 = 64
             self.cap4 = CapLayer2(64, self.cap_dim_4, 4, 10, as_final_output=True,
                                   route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
@@ -102,7 +103,15 @@ class CapsNet(nn.Module):
                                       route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
             self.cap_v4_2 = CapLayer2(self.cap_v4_dim, self.cap_v4_dim, 8, 10, as_final_output=True,
                                       route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
-
+        if self.cap_model == 'v5':
+            self.cap_v5_dim = 64
+            self.long_cap = CapLayer2(self.cap_v5_dim, self.cap_v5_dim, 4, 4,
+                                      route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+            self.bucket = nn.Sequential(*[
+                nn.Conv2d(self.cap_v5_dim, self.cap_v5_dim, kernel_size=1),
+                nn.BatchNorm2d(self.cap_v5_dim),
+                nn.ReLU(True)
+            ])
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -135,7 +144,10 @@ class CapsNet(nn.Module):
         #     x = self.cap2(x)
         #     x = self.transfer2_2(x)
         x = self.layer3(x)                  # bs x 64(for depth=20) x 8 x 8
-        if self.cap_model == 'v1' or self.cap_model == 'v2':
+        if self.cap_model == 'v1' or \
+                self.cap_model == 'v2' or \
+                self.cap_model == 'v5':
+
             if not self.skip_pre_transfer:
                 x = self.transfer3_1(x)
             if not self.skip_pre_squash:
@@ -153,6 +165,11 @@ class CapsNet(nn.Module):
                 x = self._do_squash(x)
             x = self.cap_v4_1(x)
             x = self.cap_v4_2(x)
+        elif self.cap_model == 'v5':
+            for i in range(self.cap_N):
+                x = self.long_cap(x)
+                x = self.bucket(x)
+            x = self.cap4(x)   # use the head of v2
         else:
             # v1, capsule_original, baseline, etc.
             x = self.tranfer_conv(x)
