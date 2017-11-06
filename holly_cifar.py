@@ -1,12 +1,8 @@
 from __future__ import print_function
-import os
-import torch
 import torch.optim as optim
 import torch.utils.data as data
-
 from data.create_dset import create_dataset
 from option.train_opt import args   # for cifar we also has test here
-
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import layers.from_wyang.models.cifar as models
@@ -21,7 +17,7 @@ state = {k: v for k, v in args._get_kwargs()}
 # TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
 if args.visdom:
     import visdom
-    vis = visdom.Visdom(port=args.port_id)
+    vis = visdom.Visdom(port=args.port_id, env=args.experiment_name)
 
 
 def adjust_learning_rate(optimizer, epoch):

@@ -51,8 +51,8 @@ parser.add_argument('--prior_config', default='v2_512', type=str)
 
 # runtime and display
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
-parser.add_argument('--visdom', default=False, type=str2bool, help='Use visdom to for loss visualization')
-parser.add_argument('--port_id', default=8097, type=int)
+parser.add_argument('--visdom', default=True, type=str2bool, help='Use visdom to for loss visualization')
+parser.add_argument('--port_id', default=2000, type=int)
 parser.add_argument('--display_id', default=1, type=int)
 parser.add_argument('--send_images_to_visdom', type=str2bool, default=False,
                     help='Sample a random image from each 10th batch, send it to visdom after augmentations step')

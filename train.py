@@ -13,8 +13,6 @@ from data.create_dset import create_dataset
 from layers.modules import MultiBoxLoss
 from ssd import build_ssd           # this is a function
 from option.train_opt import args
-
-
 # TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
 if args.visdom:
     import visdom
