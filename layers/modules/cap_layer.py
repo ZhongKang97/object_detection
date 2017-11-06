@@ -235,8 +235,9 @@ class CapLayer2(nn.Module):
         Args:
                     channel_num_in: dim of input capsules, d1, in_dim
                     channel_num_out: dim of output capsules, d2, out_dim
-                    number of input capsules, i: spatial_size_1 **2, num_in_caps
-                    number of output capsules, j: spatial_size_2 **2, num_out_caps
+                    number of input capsules,   i: spatial_size_1 **2, num_in_caps
+                    number of output capsules,  j: spatial_size_2 **2, num_out_caps
+                                                or j: spatial_size_2 if as final output, num_out_caps
 
                     Convolution parameters (W):
                         nn.Conv2d(IN, OUT, 1)
@@ -251,14 +252,18 @@ class CapLayer2(nn.Module):
     def __init__(self,
                  channel_num_in, channel_num_out,
                  spatial_size_1, spatial_size_2,
-                 route_num, b_init, w_version):
+                 route_num, b_init, w_version, as_final_output=False):
         super(CapLayer2, self).__init__()
-        self.num_in_caps = int(spatial_size_1 ** 2)      # 32 x 32
-        self.num_out_caps = int(spatial_size_2 ** 2)     # 16 x 16
+        self.num_in_caps = int(spatial_size_1 ** 2)
+        if as_final_output:
+            self.num_out_caps = spatial_size_2
+        else:
+            self.num_out_caps = int(spatial_size_2 ** 2)
         self.in_dim = channel_num_in
         self.out_dim = channel_num_out
         self.route_num = route_num
         self.w_version = w_version
+        self.as_final_output = as_final_output
 
         if w_version == 'v2':
             self.W = nn.Conv2d(self.in_dim, self.out_dim*self.num_out_caps, kernel_size=1, stride=1)
@@ -294,9 +299,10 @@ class CapLayer2(nn.Module):
         # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
         # routing ends
 
-        # v: eg., 64, 256 (16x16), 20 -> 64 20 16 16
-        spatial_out = int(math.sqrt(self.num_out_caps))
-        v = v.permute(0, 2, 1).resize(bs, self.out_dim, spatial_out, spatial_out)
+        # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16
+        if not self.as_final_output:
+            spatial_out = int(math.sqrt(self.num_out_caps))
+            v = v.permute(0, 2, 1).resize(bs, self.out_dim, spatial_out, spatial_out)
         return v
 
 

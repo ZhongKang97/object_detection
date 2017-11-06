@@ -16,7 +16,10 @@ class CapsNet(nn.Module):
         assert (depth - 2) % 6 == 0, 'depth should be 6n+2'
         n = (depth - 2) / 6
         block = Bottleneck if depth >= 44 else BasicBlock
-        self.cap_model = opts.cap_model
+        if hasattr(opts, 'cap_model'):
+            self.cap_model = opts.cap_model
+        else:
+            self.cap_model = 'v0'
         self.structure = structure
         self.inplanes = 16
         self.skip_pre_squash = opts.skip_pre_squash
@@ -42,7 +45,7 @@ class CapsNet(nn.Module):
                                   b_init=opts.b_init, w_version=opts.w_version,
                                   do_squash=opts.do_squash,
                                   look_into_details=opts.look_into_details)
-        if self.cap_model == 'v1':
+        if self.cap_model == 'v1' or self.cap_model == 'v2':
             self.cap_dim_1 = 16
             # transfer convolution to capsule
             self.transfer1_1 = nn.Sequential(*[
@@ -85,9 +88,23 @@ class CapsNet(nn.Module):
                 nn.BatchNorm2d(64),
                 nn.ReLU(True)
             ])
+        if self.cap_model == 'v2':
+            self.cap_dim_4 = 64
+            self.cap4 = CapLayer2(64, self.cap_dim_4, 4, 10, as_final_output=True,
+                                  route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+        # THERE IS NO VERSION 3
+        if self.cap_model == 'v4':
+            self.cap_v4_dim = 64
+            self.transfer_v4 = nn.Sequential(*[
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            ])
+            self.cap_v4_1 = CapLayer2(64, self.cap_v4_dim, 8, 8,
+                                      route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
+            self.cap_v4_2 = CapLayer2(self.cap_v4_dim, self.cap_v4_dim, 8, 10, as_final_output=True,
+                                      route_num=opts.route_num, b_init=opts.b_init, w_version=opts.w_version)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
@@ -118,26 +135,38 @@ class CapsNet(nn.Module):
         #     x = self.cap2(x)
         #     x = self.transfer2_2(x)
         x = self.layer3(x)                  # bs x 64(for depth=20) x 8 x 8
-        if self.cap_model == 'v1':
+        if self.cap_model == 'v1' or self.cap_model == 'v2':
             if not self.skip_pre_transfer:
                 x = self.transfer3_1(x)
             if not self.skip_pre_squash:
                 x = self._do_squash(x)
-            x = self.cap3(x)
-            x = self.transfer3_2(x)
+            x = self.cap3(x)                # bs, 64, 4, 4
+            if self.cap_model == 'v1':
+                x = self.transfer3_2(x)     # bs, 64, 8, 8
 
-        x = self.tranfer_conv(x)
-        x = self.tranfer_bn(x)
-        x = self.tranfer_relu(x)            # bs x 64 x 6 x 6
-        if self.structure == 'capsule':
-            # print('conv time: {:.4f}'.format(time.time() - start))
-            start = time.time()
-            x = self.cap_layer(x, target, curr_iter)
-            # print('last cap total time: {:.4f}'.format(time.time() - start))
-        elif self.structure == 'resnet':
-            x = self.avgpool(x)
-            x = x.view(x.size(0), -1)
-            x = self.fc(x)
+        if self.cap_model == 'v2':
+            x = self.cap4(x)
+        elif self.cap_model == 'v4':
+            if not self.skip_pre_transfer:
+                x = self.transfer_v4(x)
+            if not self.skip_pre_squash:
+                x = self._do_squash(x)
+            x = self.cap_v4_1(x)
+            x = self.cap_v4_2(x)
+        else:
+            # v1, capsule_original, baseline, etc.
+            x = self.tranfer_conv(x)
+            x = self.tranfer_bn(x)
+            x = self.tranfer_relu(x)        # bs x 64 x 6 x 6
+            if self.structure == 'capsule':
+                # print('conv time: {:.4f}'.format(time.time() - start))
+                start = time.time()
+                x = self.cap_layer(x, target, curr_iter)
+                # print('last cap total time: {:.4f}'.format(time.time() - start))
+            elif self.structure == 'resnet':
+                x = self.avgpool(x)
+                x = x.view(x.size(0), -1)
+                x = self.fc(x)
         return x
 
     def _do_squash(self, x):
