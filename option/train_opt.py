@@ -55,7 +55,7 @@ parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone')
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
 parser.add_argument('--save_epoch', default=20, type=int)
 
-# runtime and display
+# RUNTIME AND DISPLAY
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--visdom', default=True, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port', default=4000, type=int)
@@ -87,6 +87,8 @@ if args.dataset == 'voc' or args.dataset == 'coco':
     if args.debug:
         args.loss_freq, args.save_freq = 1, 5
     else:
+        # when in deploy mode, we will use port_id = 2000 as default on server
+        args.port = 2000
         args.loss_freq, args.save_freq = 50, 5000
 
 if args.dataset == 'cifar' and args.test_only:
