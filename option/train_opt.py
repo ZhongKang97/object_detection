@@ -69,6 +69,9 @@ args.start_epoch = 1
 args.max_epoch = args.epochs if hasattr(args, 'epochs') else args.max_iter
 
 args.debug = not args.deploy
+if args.deploy:
+    # when in deploy mode, we will use port_id = 2000 as default on server
+    args.port = 2000
 args.phase = 'train'
 # args.gpu_id = util._process(args.gpu_id)
 args.save_folder = os.path.join('result', args.experiment_name, args.phase)
@@ -87,8 +90,6 @@ if args.dataset == 'voc' or args.dataset == 'coco':
     if args.debug:
         args.loss_freq, args.save_freq = 1, 5
     else:
-        # when in deploy mode, we will use port_id = 2000 as default on server
-        args.port = 2000
         args.loss_freq, args.save_freq = 50, 5000
 
 if args.dataset == 'cifar' and args.test_only:
