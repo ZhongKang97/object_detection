@@ -55,6 +55,7 @@ class CapLayer(nn.Module):
         if w_version == 'v0':
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
         elif w_version == 'v1':
+            # wrong version
             # 1152 (32 x 36), 8, 16, 10
             # W[x][y], x = 32, y = 10
             self.W = [[nn.Linear(in_dim, out_dim, bias=False)] * num_out_caps for _ in range(num_shared)]
