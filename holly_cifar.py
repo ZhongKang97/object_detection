@@ -2,29 +2,37 @@ from __future__ import print_function
 import torch.optim as optim
 import torch.utils.data as data
 from data.create_dset import create_dataset
-from option.train_opt import args   # for cifar we also has test here
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-import layers.from_wyang.models.cifar as models
-from utils.from_wyang import Logger, savefig
 from layers.modules.capsule import CapsNet
 from layers.modules.cap_layer import MarginLoss
 from layers.modules.cifar_train_val import *
 from utils.visualizer import Visualizer
+from utils.util import *
+from option.train_opt import args   # for cifar we also has test here
 
-use_cuda = torch.cuda.is_available()
-show_freq = 10
-state = {k: v for k, v in args._get_kwargs()}
+args.show_freq = 20
+args.show_test_after_epoch = 139  # -1
+args = show_jot_opt(args)
 vis = Visualizer(args)
 
 
-def adjust_learning_rate(optimizer, epoch):
-    global state
-    if epoch in args.schedule_cifar:
-        state['lr'] *= args.gamma
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = state['lr']
-
+def adjust_learning_rate(optimizer, step):
+    """
+    Sets the learning rate to the initial LR decayed by 10 at every specified step
+    # Adapted from PyTorch Imagenet example:
+    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    Input: step or epoch
+    """
+    try:
+        schedule_list = np.array(args.schedule)
+    except AttributeError:
+        schedule_list = np.array(args.schedule_cifar)
+    decay = args.gamma ** (sum(step >= schedule_list))
+    lr = args.lr * decay
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return lr
 
 test_dset = create_dataset(args, 'test')
 test_loader = data.DataLoader(test_dset, args.test_batch,
@@ -38,7 +46,6 @@ model = CapsNet(depth=20, num_classes=10,
 if args.test_only:
     model = load_weights(args, model)
 
-# model = models.__dict__['resnet'](num_classes=train_dset.num_classes, depth=50)
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
 if args.use_CE_loss:
@@ -47,7 +54,7 @@ else:
     criterion = MarginLoss(num_classes=10) \
         if args.model_cifar == 'capsule' else nn.CrossEntropyLoss()
 
-if use_cuda:
+if args.use_cuda:
     criterion = criterion.cuda()
     if args.deploy:
         model = torch.nn.DataParallel(model).cuda()
@@ -55,54 +62,53 @@ if use_cuda:
         model = model.cuda()
 cudnn.benchmark = True
 
-title = 'cifar-10-resnet'
-logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-logger.set_names(['Epoch', 'Learning Rate', 'Train Loss', 'Test Loss',
-                  'Train Acc.', 'Test Acc.', 'Train Acc5.', 'Test Acc5.'])
-
 best_acc = 0  # best test accuracy
 # train and test
 if args.test_only:
-    test_loss, test_acc, test_acc5 = \
-            test(test_loader, model, criterion, use_cuda,
-                 structure=args.model_cifar, show_freq=show_freq)
-    print('test acc is {:.4f}'.format(test_acc))
+    info = test(test_loader, model, criterion, args, vis)
+    print('test acc is {:.4f}'.format(info['test_acc']))
 else:
     for epoch in range(args.epochs):
+
+        old_lr = optimizer.param_groups[0]['lr']
         adjust_learning_rate(optimizer, epoch)
-        print('\nEpoch: [%d | %d] LR: %f' % (epoch + 1, args.epochs, state['lr']))
-        train_loss, train_acc, train_acc5 = \
-            train(train_loader, model, criterion,
-                  optimizer, use_cuda,
-                  structure=args.model_cifar, show_freq=show_freq)
+        new_lr = optimizer.param_groups[0]['lr']
+        if epoch == args.start_epoch - 1:
+            print_log('\ninit learning rate {:f} at iter {:d}\n'.format(
+                old_lr, epoch), args.file_name)
+        if old_lr != new_lr:
+            print_log('\nchange learning rate from {:f} to '
+                      '{:f} at iter {:d}\n'.format(old_lr, new_lr, epoch), args.file_name)
+        info = train(train_loader, model, criterion, optimizer, args, vis, epoch)
 
-        if epoch > 139:
-            test_loss, test_acc, test_acc5 = \
-                test(test_loader, model, criterion, use_cuda,
-                     structure=args.model_cifar, show_freq=show_freq)
+        if epoch > args.show_test_after_epoch:
+            extra_info = test(test_loader, model, criterion, args, vis, epoch)
         else:
-            test_loss, test_acc, test_acc5 = 'n/a', 'n/a', 'n/a'
+            extra_info = dict()
+            extra_info['test_loss'], extra_info['test_acc'] = 0, 0
 
-        # append logger file
-        logger.append([str(epoch), state['lr'], train_loss, test_loss,
-                       train_acc, test_acc, train_acc5, test_acc5])
+        # show loss in console and log into file
+        info.update(extra_info)
+        vis.print_loss(info, epoch, epoch_sum=True)
 
         # save model
-        test_acc = 0 if test_acc == 'n/a' else test_acc
+        test_acc = 0 if extra_info['test_acc'] == 'n/a' else extra_info['test_acc']
         is_best = test_acc > best_acc
         best_acc = max(test_acc, best_acc)
         save_checkpoint({
-            'epoch':        epoch + 1,
+            'epoch':        epoch+1,
             'state_dict':   model.state_dict(),
-            'acc':          test_acc,
-            'best_acc':     best_acc,
+            'test_acc':          test_acc,
+            'best_test_acc':     best_acc,
             'optimizer':    optimizer.state_dict(),
-        }, is_best, checkpoint=args.checkpoint)
-    logger.close()
-    # logger.plot()
-    # savefig(os.path.join(args.checkpoint, 'log.eps'))
-    print('Best acc:')
-    print(best_acc)
+        }, is_best, args, epoch)
+        msg = 'status: <b>RUNNING</b><br/>curr best test acc {:.4f}'.format(best_acc)
+        vis.vis.text(msg, win=200)
+
+    print_log('Best acc: {:.f}. Training done.'.format(best_acc), args.file_name)
+    msg = 'status: DONE\nbest test acc {:.4f}'.format(best_acc)
+    vis.vis.text(msg, win=300)
+
 
 
 

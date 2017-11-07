@@ -171,7 +171,8 @@ class CapsNet(nn.Module):
                 x = self.bucket(x)
             x = self.cap4(x)   # use the head of v2
         else:
-            # v1, capsule_original, baseline, etc.
+            # v1, v0, capsule_original, baseline, etc.
+
             x = self.tranfer_conv(x)
             x = self.tranfer_bn(x)
             x = self.tranfer_relu(x)        # bs x 64 x 6 x 6
