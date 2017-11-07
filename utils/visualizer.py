@@ -9,6 +9,7 @@ class Visualizer(object):
         if self.opt.visdom:
             import visdom
             self.vis = visdom.Visdom(port=opt.port, env=opt.experiment_name)
+            # lines 100, text 200, images/hist 300
             self.display_win_id = 100
 
             self.loss_data = {'X': [], 'Y': [], 'legend': ['train_loss']}

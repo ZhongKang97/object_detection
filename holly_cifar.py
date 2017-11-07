@@ -107,7 +107,7 @@ else:
 
     print_log('Best acc: {:.f}. Training done.'.format(best_acc), args.file_name)
     msg = 'status: DONE\nbest test acc {:.4f}'.format(best_acc)
-    vis.vis.text(msg, win=300)
+    vis.vis.text(msg, win=200)
 
 
 
