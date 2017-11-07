@@ -43,9 +43,6 @@ train_loader = data.DataLoader(train_dset, args.train_batch,
 
 model = CapsNet(depth=20, num_classes=10,
                 opts=args, structure=args.model_cifar)
-if args.test_only:
-    model = load_weights(args, model)
-
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
 if args.use_CE_loss:
@@ -62,12 +59,22 @@ if args.use_cuda:
         model = model.cuda()
 cudnn.benchmark = True
 
-best_acc = 0  # best test accuracy
-# train and test
 if args.test_only:
-    info = test(test_loader, model, criterion, args, vis)
-    print('test acc is {:.4f}'.format(info['test_acc']))
+    # args.non_target_j = True  # added in the opt.py
+    # test_model_list = [1, 20, 80, 300]
+    test_model_list = [1]
+    for _, i in enumerate(test_model_list):
+        # model_file = \
+        #     os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
+        model_file = os.path.join('result', args.experiment_name, 'model_best.pth')
+        print('loading weights of model [{:s}]'.format(os.path.basename(model_file)))
+        model = load_weights(model_file, model)
+        args.cifar_model = model_file
+        info = test(test_loader, model, criterion, args, vis)
+        print('test acc is {:.4f}'.format(info['test_acc']))
 else:
+    # train and test
+    best_acc = 0
     for epoch in range(args.epochs):
 
         old_lr = optimizer.param_groups[0]['lr']
@@ -105,7 +112,7 @@ else:
         msg = 'status: <b>RUNNING</b><br/>curr best test acc {:.4f}'.format(best_acc)
         vis.vis.text(msg, win=200)
 
-    print_log('Best acc: {:.f}. Training done.'.format(best_acc), args.file_name)
+    print_log('Best acc: {:.4f}. Training done.'.format(best_acc), args.file_name)
     msg = 'status: DONE\nbest test acc {:.4f}'.format(best_acc)
     vis.vis.text(msg, win=200)
 

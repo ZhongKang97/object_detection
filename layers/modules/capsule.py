@@ -40,12 +40,9 @@ class CapsNet(nn.Module):
         self.avgpool = nn.AvgPool2d(6)
         self.fc = nn.Linear(256, num_classes)
         # capsule module
-        self.cap_layer = CapLayer(num_in_caps=32*6*6, num_out_caps=num_classes,
+        self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
                                   in_dim=8, out_dim=16,
-                                  num_shared=32, route_num=opts.route_num,
-                                  b_init=opts.b_init, w_version=opts.w_version,
-                                  do_squash=opts.do_squash,
-                                  look_into_details=opts.look_into_details)
+                                  num_shared=32)
         if self.cap_model == 'v1' or self.cap_model == 'v2' or self.cap_model == 'v5':
             self.cap_dim_1 = 16
             # transfer convolution to capsule
@@ -125,7 +122,8 @@ class CapsNet(nn.Module):
                 m.bias.data.zero_()
         # print('passed init')
 
-    def forward(self, x, target=None, curr_iter=0):
+    def forward(self, x, target=None, curr_iter=0, vis=None):
+        batch_cos, batch_length = [], []
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -179,13 +177,13 @@ class CapsNet(nn.Module):
             if self.structure == 'capsule':
                 # print('conv time: {:.4f}'.format(time.time() - start))
                 start = time.time()
-                x = self.cap_layer(x, target, curr_iter)
+                x, stats = self.cap_layer(x, target, curr_iter, vis)
                 # print('last cap total time: {:.4f}'.format(time.time() - start))
             elif self.structure == 'resnet':
                 x = self.avgpool(x)
                 x = x.view(x.size(0), -1)
                 x = self.fc(x)
-        return x
+        return x, stats
 
     def _do_squash(self, x):
         spatial_size = x.size(2)

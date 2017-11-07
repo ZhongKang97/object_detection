@@ -11,6 +11,8 @@ class Visualizer(object):
             self.vis = visdom.Visdom(port=opt.port, env=opt.experiment_name)
             # lines 100, text 200, images/hist 300
             self.display_win_id = 100
+            self.dis_win_id_im = 300
+            self.dis_win_im_cnt = 0
 
             self.loss_data = {'X': [], 'Y': [], 'legend': ['train_loss']}
             self.acc_data = {'X': [], 'Y': [], 'legend': ['train_acc', 'train_acc5']}
@@ -101,6 +103,56 @@ class Visualizer(object):
                     'ylabel': 'accuracy'},
                 win=self.display_win_id + 3
             )
+
+    def plot_hist(self, stats_data, info):
+        # data1 = data1.cpu().numpy()
+        # title_str = 'CosDist, u_hat (bs_i_j_d2), ' \
+        #             'curr_iter={:d}, bs={:d}, j={:d}'.format(
+        #             info['curr_iter'], info['sample_index'], info['j'])
+        data1 = stats_data[0]
+        data2 = stats_data[1]
+        data3 = stats_data[2]
+        title_str = 'CosDist: <i-i>, u_hat(i_j_d2), ' \
+                    'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
+        self.vis.histogram(
+            data1,
+            win=self.dis_win_id_im + self.dis_win_im_cnt,
+            opts={
+                'title': title_str,
+                'xlabel': 'bin',
+                'ylabel': 'percentage',
+                'numbins': 60,
+                # 'width': 1000,
+                # 'height': 1000,
+            },
+        )
+        title_str = '||u_hat_i||, ' \
+                    'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
+        # data2 = data2.cpu().numpy()
+        self.vis.histogram(
+            data2,
+            win=self.dis_win_id_im + 1 + self.dis_win_im_cnt,
+            opts={
+                'title': title_str,
+                'xlabel': 'bin',
+                'ylabel': 'percentage',
+                'numbins': 30
+            },
+        )
+        title_str = 'CosDist: <i-j>, u_hat(i_j_d2), ' \
+                    'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
+        # data2 = data2.cpu().numpy()
+        self.vis.histogram(
+            data3,
+            win=self.dis_win_id_im + 2 + self.dis_win_im_cnt,
+            opts={
+                'title': title_str,
+                'xlabel': 'bin',
+                'ylabel': 'percentage',
+                'numbins': 30
+            },
+        )
+        self.dis_win_im_cnt += 3
 
     def show_image(self, epoch, images):
         # show in the visdom

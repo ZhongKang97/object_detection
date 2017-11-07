@@ -33,13 +33,55 @@ def squash(vec):
     return torch.mul(vec, coeff2)
 
 
+def compute_stats(target, pred, v, non_target_j=False):
+    # which_sample = 10
+    batch_cos_dist = []
+    batch_i_length = []
+    batch_cos_v = []
+    for i in range(2): #range(bs):
+        samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
+        cosine_dist = torch.matmul(pred[i, :, samplet_gt, :].squeeze(),
+                                   pred[i, :, samplet_gt, :].squeeze().t()).data
+        cosine_dist = cosine_dist.cpu().numpy()
+        new_data = []
+        for j in range(pred.size(1)):
+            new_data.extend(cosine_dist[j, j:])
+
+        i_length = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data
+        i_length.cpu().numpy()
+
+        cos_v = torch.matmul(pred[i, :, samplet_gt, :].squeeze(),
+                             v[i, samplet_gt, :]).data
+        cos_v.cpu().numpy()
+
+        batch_cos_dist.extend(new_data)
+        batch_i_length.extend(i_length)
+        batch_cos_v.extend(cos_v)
+
+    return batch_cos_dist, batch_i_length, batch_cos_v
+# info = {
+#     'sample_index': 4,
+#     'j': samplet_gt,
+#     'i_num': pred.size(1),
+#     'd2_num': pred.size(3),
+#     'curr_iter': curr_iter,
+# }
+# vis.plot_hist(cosine_dist, i_length, info)
+
+
 class CapLayer(nn.Module):
-    def __init__(self, num_in_caps, num_out_caps,
-                 in_dim, out_dim, num_shared,
-                 route_num, b_init, w_version,
-                 do_squash=False, look_into_details=False,
-                 has_relu_in_W=False):
+    def __init__(self, opts, num_in_caps, num_out_caps,
+                 in_dim, out_dim, num_shared):
         super(CapLayer, self).__init__()
+        # legacy
+        route_num = opts.route_num
+        b_init = opts.b_init
+        w_version = opts.w_version
+        do_squash = opts.do_squash
+        look_into_details = opts.look_into_details
+        has_relu_in_W = opts.has_relu_in_W
+
+        self.non_target_j = opts.non_target_j
         self.has_relu_in_W = has_relu_in_W
         # TODO: this is an internal argument
         self.FIND_DIFF = False
@@ -53,9 +95,10 @@ class CapLayer(nn.Module):
         self.which_sample, self.which_j = 0, 0
 
         if w_version == 'v0':
+            # wrong version
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
         elif w_version == 'v1':
-            # wrong version
+            # FC implemented
             # 1152 (32 x 36), 8, 16, 10
             # W[x][y], x = 32, y = 10
             self.W = [[nn.Linear(in_dim, out_dim, bias=False)] * num_out_caps for _ in range(num_shared)]
@@ -76,8 +119,11 @@ class CapLayer(nn.Module):
         elif b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
 
-    def forward(self, input, target, curr_iter):
+    def forward(self, input, target, curr_iter, vis):
 
+        batch_cos_dist = []
+        batch_i_length = []
+        batch_cos_v = []
         bs, in_channels, h, w = input.size()
         # assert in_channels == self.num_shared * self.in_dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
@@ -133,6 +179,10 @@ class CapLayer(nn.Module):
                 b = torch.add(b, delta_b)
             # routing ends
             # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
+
+            if vis is not None:
+                batch_cos_dist, batch_i_length, batch_cos_v = \
+                    compute_stats(target, pred, v, self.non_target_j)
 
             if self.FIND_DIFF:
                 temp = np.asarray(pred_list)
@@ -224,7 +274,7 @@ class CapLayer(nn.Module):
                 print('\n')
         # END of debug
 
-        return v
+        return v, [batch_cos_dist, batch_i_length, batch_cos_v]
 
 
 class CapLayer2(nn.Module):
