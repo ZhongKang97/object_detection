@@ -104,4 +104,5 @@ if torch.cuda.is_available():
     args.use_cuda = True
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
+    args.use_cuda = False
     torch.set_default_tensor_type('torch.FloatTensor')

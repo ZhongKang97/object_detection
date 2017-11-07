@@ -33,11 +33,21 @@ def squash(vec):
     return torch.mul(vec, coeff2)
 
 
+def _update(x, y, a):
+    for i in range(len(x)):
+        a[int(x[i])].append(y[i])
+    return a
+
+
 def compute_stats(target, pred, v, non_target_j=False):
     # which_sample = 10
     batch_cos_dist = []
     batch_i_length = []
     batch_cos_v = []
+    avg_len = []
+    # THE FOLOOWING PROCESS IS ONE ITER WITHIN THE MINI-BATCH
+    avg_len = [[] for _ in range(21)]    # there are 21 bins
+
     for i in range(2): #range(bs):
         samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
         pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
@@ -56,11 +66,19 @@ def compute_stats(target, pred, v, non_target_j=False):
         cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
         cos_v = cos_v.cpu().numpy()
 
+        x_list = np.floor(cos_v * 10 + 10)   # 1152
+        y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
+        avg_len = _update(x_list, y_list, avg_len)
         batch_cos_dist.extend(new_data)
         batch_i_length.extend(i_length)
         batch_cos_v.extend(cos_v)
 
-    return batch_cos_dist, batch_i_length, batch_cos_v
+    avg_len_new = []
+    for i in range(21):
+        avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
+        avg_len_new.append(avg_value)
+
+    return batch_cos_dist, batch_i_length, batch_cos_v, {'X': list(range(21)), 'Y': avg_len_new}
 # info = {
 #     'sample_index': 4,
 #     'j': samplet_gt,
@@ -126,6 +144,7 @@ class CapLayer(nn.Module):
         batch_cos_dist = []
         batch_i_length = []
         batch_cos_v = []
+        avg_len = []
         bs, in_channels, h, w = input.size()
         # assert in_channels == self.num_shared * self.in_dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
@@ -183,7 +202,7 @@ class CapLayer(nn.Module):
             # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
 
             if vis is not None:
-                batch_cos_dist, batch_i_length, batch_cos_v = \
+                batch_cos_dist, batch_i_length, batch_cos_v, avg_len = \
                     compute_stats(target, pred, v, self.non_target_j)
 
             if self.FIND_DIFF:
@@ -276,7 +295,9 @@ class CapLayer(nn.Module):
                 print('\n')
         # END of debug
 
-        return v, [batch_cos_dist, batch_i_length, batch_cos_v]
+        return v, \
+               [batch_cos_dist, batch_i_length,
+                batch_cos_v, avg_len]
 
 
 class CapLayer2(nn.Module):
