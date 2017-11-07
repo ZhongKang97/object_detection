@@ -40,8 +40,9 @@ def compute_stats(target, pred, v, non_target_j=False):
     batch_cos_v = []
     for i in range(2): #range(bs):
         samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
-        cosine_dist = torch.matmul(pred[i, :, samplet_gt, :].squeeze(),
-                                   pred[i, :, samplet_gt, :].squeeze().t()).data
+        pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
+                   pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
+        cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
         cosine_dist = cosine_dist.cpu().numpy()
         new_data = []
         for j in range(pred.size(1)):
@@ -50,9 +51,10 @@ def compute_stats(target, pred, v, non_target_j=False):
         i_length = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data
         i_length.cpu().numpy()
 
-        cos_v = torch.matmul(pred[i, :, samplet_gt, :].squeeze(),
-                             v[i, samplet_gt, :]).data
-        cos_v.cpu().numpy()
+        v_norm = v[i, samplet_gt, :] / v[i, samplet_gt, :].norm()
+        v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
+        cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
+        cos_v = cos_v.cpu().numpy()
 
         batch_cos_dist.extend(new_data)
         batch_i_length.extend(i_length)

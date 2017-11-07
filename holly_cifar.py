@@ -45,6 +45,8 @@ model = CapsNet(depth=20, num_classes=10,
                 opts=args, structure=args.model_cifar)
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
+print_log(model, args.file_name)
+
 if args.use_CE_loss:
     criterion = nn.CrossEntropyLoss()
 else:
@@ -61,12 +63,12 @@ cudnn.benchmark = True
 
 if args.test_only:
     # args.non_target_j = True  # added in the opt.py
-    # test_model_list = [1, 20, 80, 300]
-    test_model_list = [1]
+    test_model_list = [1, 20, 80, 200, 300]
+    # test_model_list = [1]
     for _, i in enumerate(test_model_list):
-        # model_file = \
-        #     os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
-        model_file = os.path.join('result', args.experiment_name, 'model_best.pth')
+        model_file = \
+            os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
+        # model_file = os.path.join('result', args.experiment_name, 'model_best.pth')
         print('loading weights of model [{:s}]'.format(os.path.basename(model_file)))
         model = load_weights(model_file, model)
         args.cifar_model = model_file
