@@ -112,6 +112,7 @@ class Visualizer(object):
         data1 = stats_data[0]
         data2 = stats_data[1]
         data3 = stats_data[2]
+        data4 = stats_data[3]
         title_str = 'CosDist: <i-i>, u_hat(i_j_d2), ' \
                     'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
         self.vis.histogram(
@@ -152,7 +153,19 @@ class Visualizer(object):
                 'numbins': 30
             },
         )
-        self.dis_win_im_cnt += 3
+        title_str = 'AvgLen: < i - j >, ' \
+                    'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
+        self.vis.line(
+            X=np.array(data4['X']),
+            Y=np.array(data4['Y']),
+            win=self.dis_win_id_im + 3 + self.dis_win_im_cnt,
+            opts={
+                'title': title_str,
+                'xlabel': 'distance',
+                'ylabel': 'length',
+            },
+        )
+        self.dis_win_im_cnt += 4
 
     def show_image(self, epoch, images):
         # show in the visdom
