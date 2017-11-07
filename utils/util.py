@@ -127,6 +127,13 @@ class Timer(object):
             return self.diff
 
 
+def remove(file_name):
+    try:
+        os.remove(file_name)
+    except FileNotFoundError:
+        pass
+
+
 def print_log(msg, file=None, init=False):
 
     print(msg)
@@ -134,7 +141,7 @@ def print_log(msg, file=None, init=False):
         pass
     else:
         if init:
-            os.remove(file)
+            remove(file)
         with open(file, 'a') as log_file:
             log_file.write('%s\n' % msg)
 
