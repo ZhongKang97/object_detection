@@ -1,15 +1,20 @@
-import shutil
 from utils.from_wyang import AverageMeter, accuracy
 from utils.util import *
 
 
-def load_weights(opts, model):
+def load_weights(model_path, model):
     print('test only mode, loading weights ...')
-    checkpoints = torch.load(opts.cifar_model)
-    print('best accu is: {:.4f}\n'.format(checkpoints['best_acc']))
+    checkpoints = torch.load(model_path)
+    try:
+        print('best test accu is: {:.4f}\n'.format(checkpoints['best_test_acc']))
+    except KeyError:
+        print('best test accu is: {:.4f}\n'.format(checkpoints['best_acc']))
     weights = checkpoints['state_dict']
-    weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
-    model.load_state_dict(weights_new)
+    try:
+        model.load_state_dict(weights)
+    except KeyError:
+        weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
+        model.load_state_dict(weights_new)
     return model
 
 
@@ -22,7 +27,7 @@ def remove_batch(dir, pattern):
 def save_checkpoint(state, is_best, args, epoch):
 
     filepath = os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(epoch+1))
-    if (epoch+1) % args.save_epoch == 0:
+    if (epoch+1) % args.save_epoch == 0 or epoch == 0:
         torch.save(state, filepath)
         print_log('model saved at {:s}'.format(filepath), args.file_name)
     if is_best:
@@ -67,7 +72,7 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        outputs = model(inputs, targets)  # 128 x 10 x 16
+        outputs, _ = model(inputs, targets)  # 128 x 10 x 16
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
 
@@ -142,8 +147,19 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
             inputs, targets = inputs.cuda(), targets.cuda()
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
+        # SHOW histogram here
+        # 120.pth, batch_idx = 67
+        input_vis = vis if opt.draw_hist and (batch_idx == 67) else None
         # compute output
-        outputs = model(inputs, targets, batch_idx)
+        outputs, stats = model(inputs, targets, batch_idx, input_vis)
+        if input_vis is not None:
+            plot_info = {
+                'd2_num': outputs.size(2),
+                'curr_iter': batch_idx,
+                'model': os.path.basename(opt.cifar_model)
+            }
+            vis.plot_hist(stats, plot_info)
+            a = 1
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
         loss = criterion(outputs, targets)
@@ -166,8 +182,9 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
             }
             vis.print_loss(curr_info, epoch, batch_idx,
                            len(testloader), epoch_sum=False, train=False)
-            vis.plot_loss(errors=curr_info,
-                          epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
+            if opt.test_only is not True:
+                vis.plot_loss(errors=curr_info,
+                              epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
     return {
         'test_loss': losses.avg,
         'test_acc': top1.avg,
