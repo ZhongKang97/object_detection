@@ -16,7 +16,7 @@ def load_weights(opts, model):
 def remove_batch(dir, pattern):
     for f in os.listdir(dir):
         if re.search(pattern, f):
-            os.remove(os.path.join(dir, f))
+            remove(os.path.join(dir, f))
 
 
 def save_checkpoint(state, is_best, args, epoch):
