@@ -5,73 +5,100 @@ import ntpath
 
 class Visualizer(object):
     def __init__(self, opt):
-
         self.opt = opt
         if self.opt.visdom:
             import visdom
             self.vis = visdom.Visdom(port=opt.port, env=opt.experiment_name)
-            self.display_win_id = 1
+            self.display_win_id = 100
 
-    def print_loss(self, epoch, i, max_i, errors):
+            self.loss_data = {'X': [], 'Y': [], 'legend': ['train_loss']}
+            self.acc_data = {'X': [], 'Y': [], 'legend': ['train_acc', 'train_acc5']}
+            self.loss_data_test = {'X': [], 'Y': [], 'legend': ['test_loss']}
+            self.acc_data_test = {'X': [], 'Y': [], 'legend': ['test_acc']}
 
-        if self.opt.model == 'default':
-            if self.opt.recurrent_loss:
-                print_log('[{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\tloss_D (real/fake) {:.5f} ({:.5f}/{:.5f})\t'
-                          'loss_SEG (ske/G || ske_rec/enc_rec) {:.5f} ({:.5f}/{:.5f} || {:.5f}/{:.5f})'.format(
-                            self.opt.experiment_name, epoch, self.opt.max_epoch, i, max_i,
-                            errors['loss_D'], errors['loss_D_real'], errors['loss_D_fake'],
-                            errors['loss_S_E_G'], errors['loss_skeleton'], errors['loss_G'],
-                            errors['loss_ske_rec'], errors['loss_enc_rec']), self.opt.file_name)
+    def print_loss(self, errors, epoch, i=0, max_i=0, epoch_sum=False, train=False):
+
+        if self.opt.dataset == 'cifar':
+            if epoch_sum:
+                print_log('Summary [{:s}]\tepoch [{:d}/{:d}]\t\t'
+                          'train_loss: {:.5f}\ttest_loss: {:.5f}\ttrain_acc: {:.5f}\t'
+                          'test_acc: {:.5f}\ttrain_acc5: {:.5f}\n'.format(
+                            self.opt.experiment_name, epoch, self.opt.max_epoch,
+                            errors['train_loss'], errors['test_loss'], errors['train_acc'],
+                            errors['test_acc'], errors['train_acc5']), self.opt.file_name)
             else:
-                print_log('[{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\tloss_D (real/fake) {:.5f} ({:.5f}/{:.5f})\t'
-                          'loss_SEG (ske/G) {:.5f} ({:.5f}/{:.5f})'.format(self.opt.experiment_name,
-                                                                           epoch, self.opt.max_epoch, i, max_i,
-                                                                           errors['loss_D'], errors['loss_D_real'],
-                                                                           errors['loss_D_fake'], errors['loss_S_E_G'],
-                                                                           errors['loss_skeleton'], errors['loss_G']),
-                          self.opt.file_name)
+                prefix = 'Train' if train else 'Test'
+                if train:
+                    print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
+                              'data: {:.3f}s | batch: {:.3f}s\t'
+                              'loss: {:.5f}\tacc: {:.5f}\tacc5: {:.5f}'.format(
+                                prefix, self.opt.experiment_name,
+                                epoch, self.opt.max_epoch, i, max_i,
+                                errors['data'], errors['batch'],
+                                errors['loss'], errors['acc'], errors['acc5']), self.opt.file_name)
+                else:
+                    print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
+                              'data: {:.3f}s | batch: {:.3f}s\t'
+                              'loss {:.5f}\tacc: {:.5f}'.format(
+                                prefix, self.opt.experiment_name,
+                                epoch, self.opt.max_epoch, i, max_i,
+                                errors['data'], errors['batch'],
+                                errors['loss'], errors['acc']), self.opt.file_name)
 
-    def plot_loss(self, epoch, i, max_i, errors):
+    def plot_loss(self, errors, epoch, i, max_i, train=False):
 
-        if (not hasattr(self, 'plot_data_1')) and (not hasattr(self, 'plot_data_2')):
-            temp_ = list(errors.keys())
-            if self.opt.model == 'default' or self.opt.add_gan_loss:
-                # with gan loss, we need to split the losses
-                loss_D_list = temp_[0:3] if self.opt.model == 'default' else temp_[-4:]
-                loss_rest = temp_[3:] if self.opt.model == 'default' else temp_[0:5]
-                self.plot_data_1 = {'X': [], 'Y': [], 'legend': loss_D_list}
-                self.plot_data_2 = {'X': [], 'Y': [], 'legend': loss_rest}
+        x_progress = epoch + float(i/max_i)
 
-            # elif (self.opt.model == 'encoder' or self.opt.model == 'vae' or self.opt.model == 'ae') \
-            #         and (not self.opt.add_gan_loss):
-            else:
-                self.plot_data_1 = {'X': [], 'Y': [], 'legend': temp_}
+        if train:
+            self.loss_data['X'].append(x_progress)
+            self.loss_data['Y'].append(errors['loss'])
+            self.acc_data['X'].append([x_progress, x_progress])
+            self.acc_data['Y'].append([errors['acc'], errors['acc5']])
 
-        x_progress = (epoch-1) + float(i/max_i)
-        self.plot_data_1['X'].append(x_progress)
-        self.plot_data_1['Y'].append([errors[k] for k in self.plot_data_1['legend']])
-        self.vis.line(
-            X=np.stack([np.array(self.plot_data_1['X'])]*len(self.plot_data_1['legend']), 1),
-            Y=np.array(self.plot_data_1['Y']),
-            opts={
-                'title': self.opt.experiment_name + ' loss over time',
-                'legend': self.plot_data_1['legend'],
-                'xlabel': 'epoch',
-                'ylabel': 'loss'},
-            win=self.display_win_id
-        )
-        if self.opt.model == 'default' or self.opt.add_gan_loss:
-            self.plot_data_2['X'].append(x_progress)
-            self.plot_data_2['Y'].append([errors[k] for k in self.plot_data_2['legend']])
             self.vis.line(
-                X=np.stack([np.array(self.plot_data_2['X'])]*len(self.plot_data_2['legend']), 1),
-                Y=np.array(self.plot_data_2['Y']),
+                X=np.array(self.loss_data['X']),
+                Y=np.array(self.loss_data['Y']),
                 opts={
-                    'title': self.opt.experiment_name + ' loss over time',
-                    'legend': self.plot_data_2['legend'],
+                    'title': 'train loss over time',
+                    'legend': self.loss_data['legend'],
                     'xlabel': 'epoch',
                     'ylabel': 'loss'},
-                win=self.display_win_id_more
+                win=self.display_win_id
+            )
+            self.vis.line(
+                X=np.array(self.acc_data['X']),
+                Y=np.array(self.acc_data['Y']),
+                opts={
+                    'title': 'train accuracy over time',
+                    'legend': self.acc_data['legend'],
+                    'xlabel': 'epoch',
+                    'ylabel': 'accuracy'},
+                win=self.display_win_id + 1
+            )
+        else:
+            self.loss_data_test['X'].append(x_progress)
+            self.loss_data_test['Y'].append(errors['loss'])
+            self.acc_data_test['X'].append(x_progress)
+            self.acc_data_test['Y'].append(errors['acc'])
+            self.vis.line(
+                X=np.array(self.loss_data_test['X']),
+                Y=np.array(self.loss_data_test['Y']),
+                opts={
+                    'title': 'test loss over time',
+                    'legend': self.loss_data_test['legend'],
+                    'xlabel': 'epoch',
+                    'ylabel': 'loss'},
+                win=self.display_win_id + 2
+            )
+            self.vis.line(
+                X=np.array(self.acc_data_test['X']),
+                Y=np.array(self.acc_data_test['Y']),
+                opts={
+                    'title': 'test accuracy over time',
+                    'legend': self.acc_data_test['legend'],
+                    'xlabel': 'epoch',
+                    'ylabel': 'accuracy'},
+                win=self.display_win_id + 3
             )
 
     def show_image(self, epoch, images):

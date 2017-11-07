@@ -1,10 +1,6 @@
-# Finger crossed!
-import os
-import time
 import shutil
-import torch
-import collections
 from utils.from_wyang import AverageMeter, accuracy
+from utils.util import *
 
 
 def load_weights(opts, model):
@@ -17,19 +13,31 @@ def load_weights(opts, model):
     return model
 
 
-def save_checkpoint(state, is_best,
-                    checkpoint='checkpoint', filename='checkpoint.pth'):
-    filepath = os.path.join(checkpoint, filename)
-    torch.save(state, filepath)
+def remove_batch(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            os.remove(os.path.join(dir, f))
+
+
+def save_checkpoint(state, is_best, args, epoch):
+
+    filepath = os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(epoch+1))
+    if (epoch+1) % args.save_epoch == 0:
+        torch.save(state, filepath)
+        print_log('model saved at {:s}'.format(filepath), args.file_name)
     if is_best:
         # save the best model
-        shutil.copyfile(filepath,
-                        os.path.join(checkpoint, 'model_best.pth'))
+        remove_batch(args.save_folder, 'model_best')
+        best_path = os.path.join(args.save_folder, 'model_best_at_epoch_{:d}.pth'.format(epoch+1))
+        torch.save(state, best_path)
+        print_log('best model saved at {:s}'.format(best_path), args.file_name)
 
 
-def train(trainloader, model,
-          criterion, optimizer, use_cuda,
-          structure, show_freq):
+def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
+
+    use_cuda = opt.use_cuda
+    structure = opt.model_cifar
+    show_freq = opt.show_freq
 
     FIX_INPUT = False
     has_data = False
@@ -91,15 +99,29 @@ def train(trainloader, model,
         batch_time.update(time.time() - end)
         end = time.time()
         if batch_idx % show_freq == 0 or batch_idx == len(trainloader)-1:
-            print('TRAIN\t({:3d}/{:3d})\t\tData: {:.3f}s | Batch: {:.3f}s | '
-                  'Loss: {:.4f} | top1: {: .4f} | top5: {:.4f}'.format(
-                    batch_idx + 1, len(trainloader), data_time.avg, batch_time.avg,
-                    losses.avg, top1.avg, top5.avg))
-    return losses.avg, top1.avg, top5.avg
+            curr_info = {
+                'loss': losses.avg,
+                'acc': top1.avg,
+                'acc5': top5.avg,
+                'data': data_time.avg,
+                'batch': batch_time.avg,
+            }
+            vis.print_loss(curr_info, epoch, batch_idx,
+                           len(trainloader), epoch_sum=False, train=True)
+            vis.plot_loss(errors=curr_info,
+                          epoch=epoch, i=batch_idx, max_i=len(trainloader), train=True)
+    return {
+        'train_loss': losses.avg,
+        'train_acc': top1.avg,
+        'train_acc5': top5.avg,
+    }
 
 
-def test(testloader, model, criterion, use_cuda,
-         show_freq, structure):
+def test(testloader, model, criterion, opt, vis, epoch=0):
+
+    use_cuda = opt.use_cuda
+    structure = opt.model_cifar
+    show_freq = opt.show_freq
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -136,8 +158,17 @@ def test(testloader, model, criterion, use_cuda,
         end = time.time()
 
         if batch_idx % show_freq == 0 or batch_idx == len(testloader)-1:
-            print('TEST\t({:3d}/{:3d})\t\tData: {:.3f}s | Batch: {:.3f}s '
-                  ' | Loss: {:.4f} | top1: {: .4f} | top5: {: .4f}'.format(
-                    batch_idx + 1, len(testloader),
-                    data_time.avg, batch_time.avg, losses.avg, top1.avg, top5.avg))
-    return losses.avg, top1.avg, top5.avg
+            curr_info = {
+                'loss': losses.avg,
+                'acc': top1.avg,
+                'data': data_time.avg,
+                'batch': batch_time.avg,
+            }
+            vis.print_loss(curr_info, epoch, batch_idx,
+                           len(testloader), epoch_sum=False, train=False)
+            vis.plot_loss(errors=curr_info,
+                          epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
+    return {
+        'test_loss': losses.avg,
+        'test_acc': top1.avg,
+    }

@@ -127,12 +127,14 @@ class Timer(object):
             return self.diff
 
 
-def print_log(msg, file=None):
+def print_log(msg, file=None, init=False):
 
     print(msg)
     if file is None:
         pass
     else:
+        if init:
+            os.remove(file)
         with open(file, 'a') as log_file:
             log_file.write('%s\n' % msg)
 
@@ -140,19 +142,22 @@ def print_log(msg, file=None):
 def show_jot_opt(opt):
 
     if opt.phase == 'train':
-        file_name = os.path.join(opt.experi_dir,
+        file_name = os.path.join(opt.save_folder,
                                  'opt_{:s}_start_epoch_{:d}_end_{:d}.txt'.format(
                                      opt.phase, opt.start_epoch, opt.max_epoch))
     else:
-        file_name = os.path.join(opt.experi_dir, 'opt_{:s}.txt'.format(opt.phase))
+        file_name = os.path.join(opt.save_folder, 'opt_{:s}.txt'.format(opt.phase))
 
     opt.file_name = file_name
     args = vars(opt)
 
+    print_log('Experiment: {:s}'.format(opt.experiment_name), file_name, init=True)
     if opt.phase == 'train':
         print_log('------------ Training Options -------------', file_name)
     else:
         print_log('------------ Test Options -----------------', file_name)
+
     for k, v in sorted(args.items()):
         print_log('%s: %s' % (str(k), str(v)), file_name)
     print_log('------------------ End --------------------', file_name)
+    return opt
