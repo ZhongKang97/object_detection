@@ -113,7 +113,7 @@ class Visualizer(object):
         data2 = stats_data[1]
         data3 = stats_data[2]
         data4 = stats_data[3]
-        title_str = 'CosDist: <i-i>, u_hat(i_j_d2), ' \
+        title_str = 'CosDist: i - i, ' \
                     'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
         self.vis.histogram(
             data1,
@@ -127,7 +127,7 @@ class Visualizer(object):
                 # 'height': 1000,
             },
         )
-        title_str = '||u_hat_i||, ' \
+        title_str = '| u_hat_i |, ' \
                     'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
         # data2 = data2.cpu().numpy()
         self.vis.histogram(
@@ -140,7 +140,7 @@ class Visualizer(object):
                 'numbins': 30
             },
         )
-        title_str = 'CosDist: <i-j>, u_hat(i_j_d2), ' \
+        title_str = 'CosDist: i - j, ' \
                     'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
         # data2 = data2.cpu().numpy()
         self.vis.histogram(
@@ -153,10 +153,11 @@ class Visualizer(object):
                 'numbins': 30
             },
         )
-        title_str = 'AvgLen: < i - j >, ' \
+        title_str = 'AvgLen: i - j, ' \
                     'batch_id={:d} Model: {:s}'.format(info['curr_iter'], info['model'])
         self.vis.line(
-            X=np.array(data4['X']),
+            X = np.linspace(-1, 1, 21),
+            # X=np.array(data4['X']),
             Y=np.array(data4['Y']),
             win=self.dis_win_id_im + 3 + self.dis_win_im_cnt,
             opts={
