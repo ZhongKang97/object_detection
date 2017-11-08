@@ -123,7 +123,6 @@ class CapsNet(nn.Module):
         # print('passed init')
 
     def forward(self, x, target=None, curr_iter=0, vis=None):
-        batch_cos, batch_length = [], []
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)

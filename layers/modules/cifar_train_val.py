@@ -1,5 +1,35 @@
 from utils.from_wyang import AverageMeter, accuracy
 from utils.util import *
+from torch.optim.lr_scheduler import ReduceLROnPlateau, \
+    ExponentialLR, MultiStepLR, StepLR, LambdaLR
+
+
+def set_lr_schedule(optimizer, plan, others=None):
+    if plan == 'plateau':
+        scheduler = ReduceLROnPlateau(optimizer, 'max')
+    elif plan == 'multi_step':
+        scheduler = MultiStepLR(optimizer,
+                                milestones=others['milestones'],
+                                gamma=others['gamma'])
+    return scheduler
+
+
+def adjust_learning_rate(optimizer, step, args):
+    """
+    Sets the learning rate to the initial LR decayed by 10 at every specified step
+    # Adapted from PyTorch Imagenet example:
+    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    Input: step/epoch
+    """
+    try:
+        schedule_list = np.array(args.schedule)
+    except AttributeError:
+        schedule_list = np.array(args.schedule_cifar)
+    decay = args.gamma ** (sum(step >= schedule_list))
+    lr = args.lr * decay
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return lr
 
 
 def load_weights(model_path, model):
