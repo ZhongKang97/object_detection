@@ -105,6 +105,7 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
+        # TODO: no stats ouput during training
         outputs, _ = model(inputs, targets)  # 128 x 10 x 16
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
@@ -123,7 +124,7 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         top1.update(prec1[0], inputs.size(0))
         top5.update(prec5[0], inputs.size(0))
 
-        # compute gradient and do SGD step
+        # OPTIMIZE
         start = time.time()
         optimizer.zero_grad()
         if structure == 'capsule':
@@ -171,7 +172,6 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
     model.eval()
 
     end = time.time()
-    # bar = Bar('Processing', max=len(testloader))
     for batch_idx, (inputs, targets) in enumerate(testloader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -186,18 +186,30 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
         which_batch_idx = 67  #20
         # which_batch_idx = 0
         input_vis = vis if opt.draw_hist and (batch_idx == which_batch_idx) else None
+
         # compute output
-        outputs, stats = model(inputs, targets, batch_idx, input_vis)
+        if opt.multi_crop_test:
+            bs, ncrops, c, h, w = inputs.size()
+            inputs_ = inputs.view(-1, c, h, w)
+        else:
+            inputs_ = inputs
+        outputs, stats = model(inputs_, targets, batch_idx, input_vis)
+
         if input_vis is not None:
+            # TODO: for now if input_vis is True, no multi_crop_test
             plot_info = {
                 'd2_num': outputs.size(2),
                 'curr_iter': batch_idx,
                 'model': os.path.basename(opt.cifar_model)
             }
             vis.plot_hist(stats, plot_info)
-            a = 1
+
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
+
+        if opt.multi_crop_test:
+            outputs = outputs.view(bs, ncrops, -1).mean(1)
+
         loss = criterion(outputs, targets)
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
