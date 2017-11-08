@@ -180,7 +180,7 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
         # SHOW histogram here
         # 120.pth, batch_idx = 67
         # TO: only on local MacBook
-        which_batch_idx = 67
+        which_batch_idx = 67  #20
         # which_batch_idx = 0
         input_vis = vis if opt.draw_hist and (batch_idx == which_batch_idx) else None
         # compute output
