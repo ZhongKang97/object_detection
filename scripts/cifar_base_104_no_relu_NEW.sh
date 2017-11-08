@@ -12,8 +12,6 @@ CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
 --schedule_cifar 150 225 \
 --lr=0.01 \
 --route_num=4 \
---train_batch=128 \
---test_batch=128 \
 --scheduler=plateau \
 --deploy
 
