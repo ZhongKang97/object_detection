@@ -48,37 +48,46 @@ def compute_stats(target, pred, v, non_target_j=False):
     # THE FOLOOWING PROCESS IS ONE ITER WITHIN THE MINI-BATCH
     avg_len = [[] for _ in range(21)]    # there are 21 bins
 
-    for i in range(2): #range(bs):
+    bs = len(target)
+    # for i in range(2): #range(bs):
+    for i in range(bs):
         samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
         pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
                    pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
-        cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
-        cosine_dist = cosine_dist.cpu().numpy()
-        new_data = []
-        for j in range(pred.size(1)):
-            new_data.extend(cosine_dist[j, j:])
 
+        # # 1. cos_distance, i - i
+        # cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
+        # cosine_dist = cosine_dist.cpu().numpy()
+        # new_data = []
+        # for j in range(pred.size(1)):
+        #     new_data.extend(cosine_dist[j, j:])
+        # batch_cos_dist.extend(new_data)
+
+        # 2. |u_hat|
         i_length = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data
         i_length.cpu().numpy()
+        batch_i_length.extend(i_length)
 
+        # 3. cos_dist, i - j
         v_norm = v[i, samplet_gt, :] / v[i, samplet_gt, :].norm()
         v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
         cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
         cos_v = cos_v.cpu().numpy()
+        batch_cos_v.extend(cos_v)
 
+        # 4.1. avg_len
         x_list = np.floor(cos_v * 10 + 10)   # 1152
         y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
         avg_len = _update(x_list, y_list, avg_len)
-        batch_cos_dist.extend(new_data)
-        batch_i_length.extend(i_length)
-        batch_cos_v.extend(cos_v)
 
-    avg_len_new = []
-    for i in range(21):
-        avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
-        avg_len_new.append(avg_value)
+    # # 4.2
+    # avg_len_new = []
+    # for i in range(21):
+    #     avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
+    #     avg_len_new.append(avg_value)
 
-    return batch_cos_dist, batch_i_length, batch_cos_v, {'X': list(range(21)), 'Y': avg_len_new}
+    return batch_cos_dist, batch_i_length, batch_cos_v, \
+            {'X': list(range(21)), 'Y': avg_len}
 # info = {
 #     'sample_index': 4,
 #     'j': samplet_gt,

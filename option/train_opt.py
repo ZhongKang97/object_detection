@@ -3,7 +3,7 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Capsule Object Detection')
-parser.add_argument('--experiment_name', default='cifar_base_104_no_relu')
+parser.add_argument('--experiment_name', default='cifar_base_104_no_relu_non_target_single')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -34,12 +34,12 @@ parser.add_argument('--prior_config', default='v2_512', type=str)
 # CIFAR
 # elif args_temp.dataset == 'cifar':
 # for cifar only
-parser.add_argument('--draw_hist', action='store_true')
-parser.add_argument('--test_only', action='store_true')
-parser.add_argument('--non_target_j', action='store_true')
+parser.add_argument('--draw_hist', action='store_false')
+parser.add_argument('--test_only', action='store_false')
+parser.add_argument('--non_target_j', action='store_false')
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str, help='only valid when model_cifar is [capsule]')
-parser.add_argument('--multi_crop_test', action='store_false')
+parser.add_argument('--multi_crop_test', action='store_true')
 
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')

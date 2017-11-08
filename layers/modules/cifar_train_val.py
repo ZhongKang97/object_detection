@@ -4,6 +4,15 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, \
     ExponentialLR, MultiStepLR, StepLR, LambdaLR
 
 
+def _update_all_data(all_data, stats):
+    all_data[0].extend(stats[0])
+    all_data[1].extend(stats[1])
+    all_data[2].extend(stats[2])
+    for i in range(21):
+        all_data[3]['Y'][i].extend(stats[3]['Y'][i])
+    return all_data
+
+
 def set_lr_schedule(optimizer, plan, others=None):
     if plan == 'plateau':
         scheduler = ReduceLROnPlateau(optimizer, 'max',
@@ -172,6 +181,9 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
     model.eval()
 
     end = time.time()
+    stats_all_data = [[] for _ in range(4)]
+    stats_all_data[3] = {'X': [], 'Y': [[] for _ in range(21)]}
+
     for batch_idx, (inputs, targets) in enumerate(testloader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -181,11 +193,16 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
         inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
 
         # SHOW histogram here
-        # 120.pth, batch_idx = 67
-        # TO: only on local MacBook
-        which_batch_idx = 67  #20
-        # which_batch_idx = 0
-        input_vis = vis if opt.draw_hist and (batch_idx == which_batch_idx) else None
+        if opt.draw_hist:
+            which_batch_idx = 67  # 20   # set -1 to see all samples
+            if which_batch_idx == batch_idx:
+                input_vis = vis
+            elif which_batch_idx == -1:
+                input_vis = vis   # draw all samples in the test
+            else:
+                input_vis = None
+        else:
+            input_vis = None
 
         # compute output
         if opt.multi_crop_test:
@@ -193,46 +210,67 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
             inputs_ = inputs.view(-1, c, h, w)
         else:
             inputs_ = inputs
+        # the computation of stats is in 'cap_layer.py'
+        # 'stats' is the result of ONE mini-batch
         outputs, stats = model(inputs_, targets, batch_idx, input_vis)
 
         if input_vis is not None:
-            # TODO: for now if input_vis is True, no multi_crop_test
-            plot_info = {
-                'd2_num': outputs.size(2),
-                'curr_iter': batch_idx,
-                'model': os.path.basename(opt.cifar_model)
-            }
-            vis.plot_hist(stats, plot_info)
+            if which_batch_idx == -1:
+                stats_all_data = _update_all_data(stats_all_data, stats)
+            else:
+                # TODO: for now if input_vis is True, no multi_crop_test
+                for i in range(21):
+                    stats[3]['Y'][i] = 0. \
+                        if stats[3]['Y'][i] == [] else \
+                        np.mean(stats[3]['Y'][i])
+                plot_info = {
+                    'd2_num': outputs.size(2),
+                    'curr_iter': batch_idx,
+                    'model': os.path.basename(opt.cifar_model)
+                }
+                vis.plot_hist(stats, plot_info)
 
-        if structure == 'capsule':
-            outputs = outputs.norm(dim=2)
+        if opt.draw_hist is False:
+            # The normal, rest testing procedure
+            if structure == 'capsule':
+                outputs = outputs.norm(dim=2)
 
-        if opt.multi_crop_test:
-            outputs = outputs.view(bs, ncrops, -1).mean(1)
+            if opt.multi_crop_test:
+                outputs = outputs.view(bs, ncrops, -1).mean(1)
 
-        loss = criterion(outputs, targets)
-        # measure accuracy and record loss
-        prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+            loss = criterion(outputs, targets)
+            # measure accuracy and record loss
+            prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
+            losses.update(loss.data[0], inputs.size(0))
+            top1.update(prec1[0], inputs.size(0))
+            top5.update(prec5[0], inputs.size(0))
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
 
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
+            if batch_idx % show_freq == 0 or batch_idx == len(testloader)-1:
+                curr_info = {
+                    'loss': losses.avg,
+                    'acc': top1.avg,
+                    'data': data_time.avg,
+                    'batch': batch_time.avg,
+                }
+                vis.print_loss(curr_info, epoch, batch_idx,
+                               len(testloader), epoch_sum=False, train=False)
+                if opt.test_only is not True:
+                    vis.plot_loss(errors=curr_info,
+                                  epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
+    # draw stats for all data here
+    if opt.draw_hist and which_batch_idx == -1:
+        for i in range(21):
+            stats_all_data[3]['Y'][i] = 0. \
+                if stats_all_data[3]['Y'][i] == [] else \
+                np.mean(stats_all_data[3]['Y'][i])
+        plot_info = {
+            'model': os.path.basename(opt.cifar_model)
+        }
+        vis.plot_hist(stats_all_data, plot_info, all_sample=True)
 
-        if batch_idx % show_freq == 0 or batch_idx == len(testloader)-1:
-            curr_info = {
-                'loss': losses.avg,
-                'acc': top1.avg,
-                'data': data_time.avg,
-                'batch': batch_time.avg,
-            }
-            vis.print_loss(curr_info, epoch, batch_idx,
-                           len(testloader), epoch_sum=False, train=False)
-            if opt.test_only is not True:
-                vis.plot_loss(errors=curr_info,
-                              epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
     return {
         'test_loss': losses.avg,
         'test_acc': top1.avg,
