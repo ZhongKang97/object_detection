@@ -31,7 +31,8 @@ def create_dataset(opts, phase=None):
     elif name == 'cifar':
         if phase == 'train':
             transform = T.Compose([
-                T.RandomCrop(32, padding=6),
+                T.Resize(40),
+                T.RandomCrop(32),
                 T.RandomHorizontalFlip(),
                 T.ColorJitter(brightness=.2, contrast=.2, saturation=.2, hue=.2),
                 T.ToTensor(),
@@ -39,8 +40,8 @@ def create_dataset(opts, phase=None):
             ])
         else:
             transform = T.Compose([
-                T.RandomCrop(32, padding=6),
-                T.RandomHorizontalFlip(),
+                T.Resize(40),
+                T.RandomCrop(32),
                 T.ToTensor(),
                 T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
             ])
