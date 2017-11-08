@@ -1,4 +1,5 @@
 import argparse
+import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Capsule Object Detection')
@@ -8,9 +9,12 @@ parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
 
 parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
+parser.add_argument('--scheduler', default=None, help='plateau, multi_step')
+parser.add_argument('--optim', default='sgd', type=str)
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight_decay', default=5e-4, type=float, help='Weight decay for SGD')
-parser.add_argument('--gamma', default=0.1, type=float, help='Gamma update for SGD')
+parser.add_argument('--weight_decay', default=5e-4, type=float)
+parser.add_argument('--gamma', default=0.1, type=float)
+parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
 
 # VOC and COCO
 # if args_temp.dataset == 'voc' or args_temp.dataset == 'coco':
@@ -56,6 +60,7 @@ parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
 parser.add_argument('--save_epoch', default=20, type=int)
 
 # RUNTIME AND DISPLAY
+parser.add_argument('--manual_seed', default=2000, type=int)
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--visdom', default=True, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port', default=4000, type=int)
@@ -106,3 +111,6 @@ if torch.cuda.is_available():
 else:
     args.use_cuda = False
     torch.set_default_tensor_type('torch.FloatTensor')
+
+random.seed(args.manual_seed)
+torch.manual_seed(args.manual_seed)
