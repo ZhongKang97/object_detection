@@ -6,7 +6,10 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, \
 
 def set_lr_schedule(optimizer, plan, others=None):
     if plan == 'plateau':
-        scheduler = ReduceLROnPlateau(optimizer, 'max')
+        scheduler = ReduceLROnPlateau(optimizer, 'max',
+                                      patience=25,
+                                      factor=0.7,
+                                      min_lr=0.00001)
     elif plan == 'multi_step':
         scheduler = MultiStepLR(optimizer,
                                 milestones=others['milestones'],

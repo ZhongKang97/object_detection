@@ -108,7 +108,9 @@ else:
         }, is_best, args, epoch)
         msg = 'status: <b>RUNNING</b><br/>' \
               'curr best test acc {:.4f} at epoch {:d}<br/>' \
-              'curr lr {:f}'.format(best_acc, best_epoch, new_lr)
+              'curr lr {:f}<br/>' \
+              'epoch [{:d} | {:d}]'.format(
+                best_acc, best_epoch, new_lr, epoch, args.epochs)
         vis.vis.text(msg, win=200)
 
     print_log('Best acc: {:.4f}. Training done.'.format(best_acc), args.file_name)
