@@ -31,14 +31,26 @@ class Visualizer(object):
             else:
                 prefix = 'Train' if train else 'Test'
                 if train:
-                    print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
-                              'data: {:.3f}s | batch: {:.3f}s\t'
-                              'loss: {:.5f}\tacc: {:.5f}\tacc5: {:.5f}'.format(
-                                prefix, self.opt.experiment_name,
-                                epoch, self.opt.max_epoch, i, max_i,
-                                errors['data'], errors['batch'],
-                                errors['loss'], errors['acc'], errors['acc5']), self.opt.file_name)
+                    if self.opt.use_KL:
+                        print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
+                                  'data: {:.3f}s | batch: {:.3f}s\t'
+                                  'loss: {:.5f}\t(KL: {:.5f} || normal: {:.5f})\t'
+                                  'acc: {:.5f}\tacc5: {:.5f}'.format(
+                                    prefix, self.opt.experiment_name,
+                                    epoch, self.opt.max_epoch, i, max_i,
+                                    errors['data'], errors['batch'],
+                                    errors['loss'], errors['KL_loss'], errors['normal_loss'],
+                                    errors['acc'], errors['acc5']), self.opt.file_name)
+                    else:
+                        print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
+                                  'data: {:.3f}s | batch: {:.3f}s\t'
+                                  'loss: {:.5f}\tacc: {:.5f}\tacc5: {:.5f}'.format(
+                                    prefix, self.opt.experiment_name,
+                                    epoch, self.opt.max_epoch, i, max_i,
+                                    errors['data'], errors['batch'],
+                                    errors['loss'], errors['acc'], errors['acc5']), self.opt.file_name)
                 else:
+                    # test phase
                     print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
                               'data: {:.3f}s | batch: {:.3f}s\t'
                               'loss {:.5f}\tacc: {:.5f}'.format(

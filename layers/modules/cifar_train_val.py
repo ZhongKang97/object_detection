@@ -80,6 +80,10 @@ def save_checkpoint(state, is_best, args, epoch):
         print_log('best model saved at {:s}'.format(best_path), args.file_name)
 
 
+def compute_KL(mean, std):
+    return -0.5 * (1 + torch.log(std**2) - mean**2 - std**2)
+
+
 def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
 
     use_cuda = opt.use_cuda
@@ -94,6 +98,8 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
+    KL_losses = AverageMeter()
+    normal_losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
     end = time.time()
@@ -114,8 +120,9 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        # TODO: no stats ouput during training
-        outputs, _ = model(inputs, targets)  # 128 x 10 x 16
+        # TODO: no stats ouput during training;
+        # update: last two entries have mean, std for KL loss
+        outputs, stats = model(inputs, targets)  # 128 x 10 x 16
         if structure == 'capsule':
             outputs = outputs.norm(dim=2)
 
@@ -127,6 +134,12 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         #     print('output is the same across all classes: {:.4f}\n'.format(one_sample[0].data[0]))
 
         loss = criterion(outputs, targets)
+        if opt.use_KL:
+            normal_losses.update(loss.data[0], inputs.size(0))
+            loss_KL = opt.KL_factor * compute_KL(stats[-2], stats[-1])
+            KL_losses.update(loss_KL.data[0], inputs.size(0))
+            loss += loss_KL
+
         # measure accuracy and record loss
         prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
         losses.update(loss.data[0], inputs.size(0))
@@ -136,10 +149,7 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         # OPTIMIZE
         start = time.time()
         optimizer.zero_grad()
-        if structure == 'capsule':
-            loss.backward(retain_graph=False)
-        else:
-            loss.backward()
+        loss.backward()
         optimizer.step()
         # print('iter bp time: {:.4f}\n'.format(time.time()-start))
 
@@ -147,13 +157,24 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
         if batch_idx % show_freq == 0 or batch_idx == len(trainloader)-1:
-            curr_info = {
-                'loss': losses.avg,
-                'acc': top1.avg,
-                'acc5': top5.avg,
-                'data': data_time.avg,
-                'batch': batch_time.avg,
-            }
+            if opt.use_KL:
+                curr_info = {
+                    'loss': losses.avg,
+                    'KL_loss': KL_losses.avg,
+                    'normal_loss': normal_losses.avg,
+                    'acc': top1.avg,
+                    'acc5': top5.avg,
+                    'data': data_time.avg,
+                    'batch': batch_time.avg,
+                }
+            else:
+                curr_info = {
+                    'loss': losses.avg,
+                    'acc': top1.avg,
+                    'acc5': top5.avg,
+                    'data': data_time.avg,
+                    'batch': batch_time.avg,
+                }
             vis.print_loss(curr_info, epoch, batch_idx,
                            len(trainloader), epoch_sum=False, train=True)
             vis.plot_loss(errors=curr_info,

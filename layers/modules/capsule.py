@@ -7,8 +7,7 @@ import time
 
 
 class CapsNet(nn.Module):
-    def __init__(self, depth, opts,
-                 num_classes=100, structure='capsule'):
+    def __init__(self, depth, opts, num_classes=100):
         super(CapsNet, self).__init__()
 
         # ResNet part
@@ -16,33 +15,38 @@ class CapsNet(nn.Module):
         assert (depth - 2) % 6 == 0, 'depth should be 6n+2'
         n = (depth - 2) / 6
         block = Bottleneck if depth >= 44 else BasicBlock
-        if hasattr(opts, 'cap_model'):
-            self.cap_model = opts.cap_model
-        else:
-            self.cap_model = 'v0'
-        self.cap_N = opts.cap_N
-        self.structure = structure
         self.inplanes = 16
-        self.skip_pre_squash = opts.skip_pre_squash
-        self.skip_pre_transfer = opts.skip_pre_transfer
-
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 16, n)
         self.layer2 = self._make_layer(block, 32, n, stride=2)
         self.layer3 = self._make_layer(block, 64, n, stride=2)
+
+        # Capsule part
+        if hasattr(opts, 'cap_model'):
+            self.cap_model = opts.cap_model
+        else:
+            self.cap_model = 'v0'
+        self.cap_N = opts.cap_N
+        self.structure = opts.model_cifar   # capsule
+        self.skip_pre_squash = opts.skip_pre_squash
+        self.skip_pre_transfer = opts.skip_pre_transfer
+
         channel_in = 256 if depth == 50 else 64
         self.tranfer_conv = nn.Conv2d(channel_in, 256, kernel_size=3)  # 256x8x8 -> 256x6x6
         self.tranfer_bn = nn.BatchNorm2d(256)
         self.tranfer_relu = nn.ReLU(True)
+
         # ablation study here
-        self.avgpool = nn.AvgPool2d(6)
-        self.fc = nn.Linear(256, num_classes)
-        # capsule module
-        self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
-                                  in_dim=8, out_dim=16,
-                                  num_shared=32)
+        if self.structure == 'resnet':
+            self.avgpool = nn.AvgPool2d(6)
+            self.fc = nn.Linear(256, num_classes)
+        if self.cap_model == 'v0':
+            # capsule module
+            self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
+                                      in_dim=8, out_dim=16,
+                                      num_shared=32)
         if self.cap_model == 'v1' or self.cap_model == 'v2' or self.cap_model == 'v5':
             self.cap_dim_1 = 16
             # transfer convolution to capsule
@@ -109,6 +113,8 @@ class CapsNet(nn.Module):
                 nn.BatchNorm2d(self.cap_v5_dim),
                 nn.ReLU(True)
             ])
+
+        # init the network
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -128,19 +134,9 @@ class CapsNet(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.layer1(x)                  # 16 x 32 x 32
-        # if self.cap_model == 'v1':
-        #     x = self.transfer1_1(x)
-        #     # do squash first
-        #     x = self._do_squash(x)
-        #     x = self.cap1(x)
-        #     x = self.transfer1_2(x)
         x = self.layer2(x)                  # 32 x 16 x 16
-        # if self.cap_model == 'v1':
-        #     x = self.transfer2_1(x)
-        #     x = self._do_squash(x)
-        #     x = self.cap2(x)
-        #     x = self.transfer2_2(x)
         x = self.layer3(x)                  # bs x 64(for depth=20) x 8 x 8
+
         if self.cap_model == 'v1' or \
                 self.cap_model == 'v2' or \
                 self.cap_model == 'v5':
