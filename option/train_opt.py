@@ -14,7 +14,7 @@ parser.add_argument('--optim', default='sgd', type=str)
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight_decay', default=5e-4, type=float)
 parser.add_argument('--gamma', default=0.1, type=float)
-parser.add_argument('--beta1', type=float, default=0.5, help='momentum term of adam')
+parser.add_argument('--beta1', type=float, default=0.8, help='momentum term of adam')
 
 # VOC and COCO
 # if args_temp.dataset == 'voc' or args_temp.dataset == 'coco':
