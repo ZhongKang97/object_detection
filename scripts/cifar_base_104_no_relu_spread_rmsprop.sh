@@ -4,7 +4,7 @@ start=`date +%s`
 
 # train and test
 CUDA_VISIBLE_DEVICES=7 python holly_cifar.py \
---experiment_name=cifar_base_104_no_relu_spead \
+--experiment_name=cifar_base_104_no_relu_spead_rmsprop \
 --dataset=cifar \
 --model_cifar=capsule \
 --epochs=300 \
