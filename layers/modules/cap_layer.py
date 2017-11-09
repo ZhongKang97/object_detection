@@ -1,4 +1,3 @@
-# Finger crossed!
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -40,54 +39,71 @@ def _update(x, y, a):
 
 
 def compute_stats(target, pred, v, non_target_j=False):
-    # which_sample = 10
     batch_cos_dist = []
     batch_i_length = []
     batch_cos_v = []
-    avg_len = []
-    # THE FOLOOWING PROCESS IS ONE ITER WITHIN THE MINI-BATCH
     avg_len = [[] for _ in range(21)]    # there are 21 bins
 
-    bs = len(target)
+    bs = pred.size(0)
+    num_i = pred.size(1)
+    num_j = pred.size(2)
+    curr_batch_leaf = Variable(torch.zeros(bs, num_i, num_j), requires_grad=True)
+    curr_batch = curr_batch_leaf.clone()
+    # THE FOLLOWING PROCESS IS ONE ITER WITHIN THE MINI-BATCH
     # for i in range(2): #range(bs):
     for i in range(bs):
-        samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
-        pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
-                   pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
 
-        # # 1. cos_distance, i - i
-        # cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
-        # cosine_dist = cosine_dist.cpu().numpy()
-        # new_data = []
-        # for j in range(pred.size(1)):
-        #     new_data.extend(cosine_dist[j, j:])
-        # batch_cos_dist.extend(new_data)
+        if target != []:
+            samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
+            pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
+                       pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
 
-        # 2. |u_hat|
-        i_length = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data
-        i_length.cpu().numpy()
-        batch_i_length.extend(i_length)
+            # # 1. cos_distance, i - i
+            # cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
+            # cosine_dist = cosine_dist.cpu().numpy()
+            # new_data = []
+            # for j in range(pred.size(1)):
+            #     new_data.extend(cosine_dist[j, j:])
+            # batch_cos_dist.extend(new_data)
 
-        # 3. cos_dist, i - j
-        v_norm = v[i, samplet_gt, :] / v[i, samplet_gt, :].norm()
-        v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
-        cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
-        cos_v = cos_v.cpu().numpy()
-        batch_cos_v.extend(cos_v)
+            # 2. |u_hat|
+            i_length = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data
+            i_length.cpu().numpy()
+            batch_i_length.extend(i_length)
 
-        # 4.1. avg_len
-        x_list = np.floor(cos_v * 10 + 10)   # 1152
-        y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
-        avg_len = _update(x_list, y_list, avg_len)
+            # 3. cos_dist, i - j
+            v_norm = v[i, samplet_gt, :] / v[i, samplet_gt, :].norm()
+            v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
+            cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
+            cos_v = cos_v.cpu().numpy()
+            batch_cos_v.extend(cos_v)
+
+            # 4.1. avg_len
+            x_list = np.floor(cos_v * 10 + 10)   # 1152
+            y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
+            avg_len = _update(x_list, y_list, avg_len)
+        else:
+            # compute cos_v of all i, j
+            for j in range(num_j):
+                pred_mat_norm = pred[i, :, j, :].squeeze() / \
+                       pred[i, :, j, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
+                v_norm = v[i, j, :] / v[i, j, :].norm()
+                v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
+                cos_v = torch.matmul(pred_mat_norm, v_norm)   # 1152 x 1
+                curr_batch[i, :, j] = cos_v
 
     # # 4.2
     # avg_len_new = []
     # for i in range(21):
     #     avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
     #     avg_len_new.append(avg_value)
-
-    return batch_cos_dist, batch_i_length, batch_cos_v, \
-            {'X': list(range(21)), 'Y': avg_len}
+    if target != []:
+        return batch_cos_dist, batch_i_length, batch_cos_v, \
+                {'X': list(range(21)), 'Y': avg_len}
+    else:
+        std = torch.std(curr_batch)
+        mean = torch.mean(curr_batch)
+        return mean, std
 # info = {
 #     'sample_index': 4,
 #     'j': samplet_gt,
@@ -122,11 +138,14 @@ class CapLayer(nn.Module):
         self.num_out_caps = num_out_caps
         self.look_into_details = look_into_details
         self.which_sample, self.which_j = 0, 0
+        self.use_KL = opts.use_KL
 
         if w_version == 'v0':
+            # DEPRECATED
             # wrong version
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
         elif w_version == 'v1':
+            # DEPRECATED
             # FC implemented
             # 1152 (32 x 36), 8, 16, 10
             # W[x][y], x = 32, y = 10
@@ -154,6 +173,7 @@ class CapLayer(nn.Module):
         batch_i_length = []
         batch_cos_v = []
         avg_len = []
+        mean, std = [], []
         bs, in_channels, h, w = input.size()
         # assert in_channels == self.num_shared * self.in_dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
@@ -213,6 +233,8 @@ class CapLayer(nn.Module):
             if vis is not None:
                 batch_cos_dist, batch_i_length, batch_cos_v, avg_len = \
                     compute_stats(target, pred, v, self.non_target_j)
+            if self.use_KL:
+                mean, std = compute_stats([], pred, v)
 
             if self.FIND_DIFF:
                 temp = np.asarray(pred_list)
@@ -229,24 +251,24 @@ class CapLayer(nn.Module):
                     print(temp[diff_ind, :])
                     print('\n')
 
-        elif self.w_version == 'v0':
-            input = input.view(bs, self.num_shared, -1, self.in_dim)
-            groups = input.chunk(self.num_shared, dim=1)
-            u = [group.chunk(h * w, dim=2) for group in groups]
-            # self.W[1](u[1][0]), u[i][j], i = 1...32, j = 1...36
-            pred = [self.W[i](in_vec) for i, group in enumerate(u) for in_vec in group]
-            # pred, list[1152], each entry, Variable, size [128x1x1x16]
-            pred = torch.stack(pred).permute(1, 0, 2, 3, 4).squeeze()  # \hat(s)_j -> 128, 1152, 16
-
-            for i in range(self.route_num):
-                # print('b'), print(b[0, 0:3, :])
-                c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
-                # print('c'), print(c[0, 0:3, :])
-                s = torch.matmul(c, pred)               # 128 x 10 x 16
-                v = squash(s)
-                delta_b = torch.matmul(pred, v.permute(0, 2, 1)).permute(0, 2, 1)
-                # print('delta_b'), print(delta_b[0, 0:3, :])
-                b = torch.add(b, delta_b)
+        # elif self.w_version == 'v0':
+        #     input = input.view(bs, self.num_shared, -1, self.in_dim)
+        #     groups = input.chunk(self.num_shared, dim=1)
+        #     u = [group.chunk(h * w, dim=2) for group in groups]
+        #     # self.W[1](u[1][0]), u[i][j], i = 1...32, j = 1...36
+        #     pred = [self.W[i](in_vec) for i, group in enumerate(u) for in_vec in group]
+        #     # pred, list[1152], each entry, Variable, size [128x1x1x16]
+        #     pred = torch.stack(pred).permute(1, 0, 2, 3, 4).squeeze()  # \hat(s)_j -> 128, 1152, 16
+        #
+        #     for i in range(self.route_num):
+        #         # print('b'), print(b[0, 0:3, :])
+        #         c = softmax_dim(b, axis=1)              # 128 x 10 x 1152, c_nji, \sum_j = 1
+        #         # print('c'), print(c[0, 0:3, :])
+        #         s = torch.matmul(c, pred)               # 128 x 10 x 16
+        #         v = squash(s)
+        #         delta_b = torch.matmul(pred, v.permute(0, 2, 1)).permute(0, 2, 1)
+        #         # print('delta_b'), print(delta_b[0, 0:3, :])
+        #         b = torch.add(b, delta_b)
         elif self.w_version == 'v3':
             x = self.avgpool(input)
             x = x.view(x.size(0), -1)
@@ -306,7 +328,7 @@ class CapLayer(nn.Module):
 
         return v, \
                [batch_cos_dist, batch_i_length,
-                batch_cos_v, avg_len]
+                batch_cos_v, avg_len, mean, std]
 
 
 class CapLayer2(nn.Module):
