@@ -38,7 +38,7 @@ def _update(x, y, a):
     return a
 
 
-def compute_stats(target, pred, v, non_target_j=False):
+def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
     batch_cos_dist = []
     batch_i_length = []
     batch_cos_v = []
@@ -47,13 +47,24 @@ def compute_stats(target, pred, v, non_target_j=False):
     bs = pred.size(0)
     num_i = pred.size(1)
     num_j = pred.size(2)
-    curr_batch_leaf = Variable(torch.zeros(bs, num_i, num_j), requires_grad=True)
-    curr_batch = curr_batch_leaf.clone()
+    d_j = pred.size(3)
+
     # THE FOLLOWING PROCESS IS ONE ITER WITHIN THE MINI-BATCH
     # for i in range(2): #range(bs):
-    for i in range(bs):
+    if KL_manner == 2:
+        # use orientation of u_hat
+        pred_mat_norm = pred / pred.norm(dim=3, keepdim=True)
+    elif KL_manner == 1:
+        # use cos_dist
+        pred_mat_norm = pred / pred.norm(dim=3, keepdim=True)     # bs 1152 10 16
+        pred_mat_norm = pred_mat_norm.permute(0, 2, 1, 3)   # bs 10 1152 16
+        v_norm = v / v.norm(dim=2, keepdim=True)    # bs 10 16
+        v_norm = v_norm.unsqueeze(dim=3)  # bs 10 16 1
+        cos_v = torch.matmul(pred_mat_norm, v_norm)  # bs 10 1152 1
 
-        if target != []:
+    else:
+        # TODO: unoptimized version, compute per sample, for showing results.
+        for i in range(bs):
             samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
             pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
                        pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
@@ -82,27 +93,22 @@ def compute_stats(target, pred, v, non_target_j=False):
             x_list = np.floor(cos_v * 10 + 10)   # 1152
             y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
             avg_len = _update(x_list, y_list, avg_len)
-        else:
-            # compute cos_v of all i, j
-            for j in range(num_j):
-                pred_mat_norm = pred[i, :, j, :].squeeze() / \
-                       pred[i, :, j, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
-                v_norm = v[i, j, :] / v[i, j, :].norm()
-                v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
-                cos_v = torch.matmul(pred_mat_norm, v_norm)   # 1152 x 1
-                curr_batch[i, :, j] = cos_v
 
-    # # 4.2
-    # avg_len_new = []
-    # for i in range(21):
-    #     avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
-    #     avg_len_new.append(avg_value)
+        # # 4.2
+        # avg_len_new = []
+        # for i in range(21):
+        #     avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
+        #     avg_len_new.append(avg_value)
     if target != []:
         return batch_cos_dist, batch_i_length, batch_cos_v, \
                 {'X': list(range(21)), 'Y': avg_len}
     else:
-        std = torch.std(curr_batch)
-        mean = torch.mean(curr_batch)
+        if KL_manner == 1:
+            std = torch.std(cos_v)
+            mean = torch.mean(cos_v)
+        elif KL_manner == 2:
+            std = torch.std(pred_mat_norm.view(-1, d_j), dim=0)
+            mean = torch.mean(pred_mat_norm.view(-1, d_j), dim=0)
         return mean, std
 # info = {
 #     'sample_index': 4,
@@ -139,6 +145,7 @@ class CapLayer(nn.Module):
         self.look_into_details = look_into_details
         self.which_sample, self.which_j = 0, 0
         self.use_KL = opts.use_KL
+        self.KL_manner = opts.KL_manner
 
         if w_version == 'v0':
             # DEPRECATED
@@ -234,7 +241,7 @@ class CapLayer(nn.Module):
                 batch_cos_dist, batch_i_length, batch_cos_v, avg_len = \
                     compute_stats(target, pred, v, self.non_target_j)
             if self.use_KL:
-                mean, std = compute_stats([], pred, v)
+                mean, std = compute_stats([], pred, v, KL_manner=self.KL_manner)
 
             if self.FIND_DIFF:
                 temp = np.asarray(pred_list)

@@ -113,7 +113,8 @@ else:
         vis.vis.text(msg, win=200)
 
     print_log('Best acc: {:.4f}. Training done.'.format(best_acc), args.file_name)
-    msg = 'status: DONE\nbest test acc {:.4f}'.format(best_acc)
+    msg = 'status: <b>DONE</b>\nbest test acc {:.4f} at epoch {:d}' \
+          '<br/>final lr at {:f}'.format(best_acc, best_epoch, new_lr)
     vis.vis.text(msg, win=200)
 
 

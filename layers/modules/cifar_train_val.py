@@ -81,7 +81,7 @@ def save_checkpoint(state, is_best, args, epoch):
 
 
 def compute_KL(mean, std):
-    return -0.5 * (1 + torch.log(std**2) - mean**2 - std**2)
+    return -0.5 * torch.sum(1 + torch.log(std**2) - mean**2 - std**2)
 
 
 def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
