@@ -24,9 +24,17 @@ train_loader = data.DataLoader(train_dset, args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
 model = CapsNet(depth=20, num_classes=10, opts=args)
-# TODO (minor): set different optim methods
-optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                      momentum=args.momentum, weight_decay=args.weight_decay)
+if args.optim == 'sgd':
+    optimizer = optim.SGD(model.parameters(), lr=args.lr,
+                          momentum=args.momentum, weight_decay=args.weight_decay)
+elif args.optim == 'adam':
+    optimizer = optim.Adam(model.parameters(), lr=args.lr,
+                           weight_decay=args.weight_decay, betas=(args.beta1, 0.999))
+elif args.optim == 'rmsprop':
+    optimizer == optim.RMSprop(model.parameters(), lr=args.lr,
+                               weight_decay=args.weight_decay, momentum=args.momentum,
+                               alpha=0.9, centered=True)
+
 if args.scheduler is not None:
     scheduler = set_lr_schedule(optimizer, args.scheduler)
 print_log(model, args.file_name)
