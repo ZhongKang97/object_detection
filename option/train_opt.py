@@ -39,7 +39,7 @@ parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str, help='only valid when model_cifar is [capsule]')
-parser.add_argument('--multi_crop_test', action='store_false')
+parser.add_argument('--multi_crop_test', action='store_true')
 
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
