@@ -11,7 +11,7 @@ from utils.visualizer import Visualizer
 from utils.util import *
 from option.train_opt import args   # for cifar we also has test here
 
-args.show_freq = 20
+args.show_freq = 5
 args.show_test_after_epoch = -1
 args = show_jot_opt(args)
 vis = Visualizer(args)
@@ -23,8 +23,7 @@ train_dset = create_dataset(args, 'train')
 train_loader = data.DataLoader(train_dset, args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
-model = CapsNet(depth=20, num_classes=10,
-                opts=args, structure=args.model_cifar)
+model = CapsNet(depth=20, num_classes=10, opts=args)
 # TODO (minor): set different optim methods
 optimizer = optim.SGD(model.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
@@ -80,7 +79,7 @@ else:
             extra_info = dict()
             extra_info['test_loss'], extra_info['test_acc'] = 0, 0
 
-        # SHOW loss in console and log into file
+        # SHOW EPOCH SUMMARY
         info.update(extra_info)
         vis.print_loss(info, epoch, epoch_sum=True)
 
@@ -100,11 +99,11 @@ else:
         best_epoch = epoch if is_best else best_epoch
         best_acc = max(test_acc, best_acc)
         save_checkpoint({
-            'epoch':        epoch+1,
-            'state_dict':   model.state_dict(),
-            'test_acc':          test_acc,
-            'best_test_acc':     best_acc,
-            'optimizer':    optimizer.state_dict(),
+                'epoch':            epoch+1,
+                'state_dict':       model.state_dict(),
+                'test_acc':         test_acc,
+                'best_test_acc':    best_acc,
+                'optimizer':        optimizer.state_dict(),
         }, is_best, args, epoch)
         msg = 'status: <b>RUNNING</b><br/>' \
               'curr best test acc {:.4f} at epoch {:d}<br/>' \

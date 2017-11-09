@@ -3,7 +3,7 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Capsule Object Detection')
-parser.add_argument('--experiment_name', default='cifar_base_104_no_relu')
+parser.add_argument('--experiment_name', default='cifar_base_104_KL')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -37,28 +37,28 @@ parser.add_argument('--prior_config', default='v2_512', type=str)
 parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
+parser.add_argument('--multi_crop_test', action='store_true')
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str, help='only valid when model_cifar is [capsule]')
-parser.add_argument('--multi_crop_test', action='store_true')
-
-parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
+parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, ...]')
+parser.add_argument('--use_KL', action='store_true')
+parser.add_argument('--KL_factor', default=.01, type=float)
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')
 parser.add_argument('--use_CE_loss', action='store_true')
-parser.add_argument('--route_num', default=3, type=int)
+parser.add_argument('--route_num', default=4, type=int)
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
-# see 'cap_layer.py' about the explanations of the following arguments
-parser.add_argument('--w_version', default='v2', type=str, help='[v0 | v1, ...]')
 parser.add_argument('--look_into_details', action='store_true')
 parser.add_argument('--has_relu_in_W', action='store_true')
 # squash is much better
 parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone')
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
+parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--save_epoch', default=20, type=int)
 
 # RUNTIME AND DISPLAY
@@ -80,7 +80,6 @@ if args.deploy:
     # when in deploy mode, we will use port_id = 2000 as default on server
     args.port = 2000
 args.phase = 'train'
-# args.gpu_id = util._process(args.gpu_id)
 args.save_folder = os.path.join('result', args.experiment_name, args.phase)
 
 if args.dataset == 'voc' or args.dataset == 'coco':
