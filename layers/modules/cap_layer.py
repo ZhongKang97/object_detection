@@ -428,11 +428,40 @@ class MarginLoss(nn.Module):
         self.lam = lam
 
     def forward(self, output, target):
-        # norm = output.norm(dim=2)        # 128 x 10
+        # output, 128 x 10
         gt = Variable(torch.zeros(output.size(0), self.num_classes), requires_grad=False)
         gt = gt.scatter_(1, target.unsqueeze(1), 1)
         zero = Variable(torch.zeros(1))
         pos_part = torch.max(zero, self.pos - output).pow(2)
         neg_part = torch.max(zero, output - self.neg).pow(2)
         loss = gt * pos_part + self.lam * (1-gt) * neg_part
+        return loss.sum() / output.size(0)
+
+
+class SpreadLoss(nn.Module):
+    def __init__(self, opt, num_classes=10, m_low=0.2, m_high=0.9, margin_epoch=20):
+        super(SpreadLoss, self).__init__()
+        self.num_classes = num_classes
+        self.total_epoch = opt.epochs
+        self.m_low = m_low
+        self.m_high = m_high
+        self.margin_epoch = margin_epoch
+        self.interval = (m_high - m_low) / (self.total_epoch - 2*margin_epoch)
+
+    def forward(self, output, target, epoch):
+
+        bs = output.size(0)
+        if epoch < self.margin_epoch:
+            m = self.m_low
+        elif epoch >= self.total_epoch - self.margin_epoch:
+            m = self.m_high
+        else:
+            m = self.m_low + self.interval * (epoch - self.margin_epoch)
+
+        target_output = torch.stack([output[i, target[i].data[0]] for i in range(bs)])
+        loss = output - target_output + m
+        gt = Variable(torch.zeros(output.size(0), self.num_classes), requires_grad=False)
+        gt = gt.scatter_(1, target.unsqueeze(1), 1)
+        loss = loss * (1-gt)
+        loss = torch.clamp(loss, min=0).pow(2)   # 128 x 10
         return loss.sum() / output.size(0)

@@ -5,7 +5,7 @@ from data.create_dset import create_dataset
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 from layers.modules.capsule import CapsNet
-from layers.modules.cap_layer import MarginLoss
+from layers.modules.cap_layer import MarginLoss, SpreadLoss
 from layers.modules.cifar_train_val import *
 from utils.visualizer import Visualizer
 from utils.util import *
@@ -33,6 +33,8 @@ print_log(model, args.file_name)
 
 if args.use_CE_loss:
     criterion = nn.CrossEntropyLoss()
+elif args.use_spread_loss:
+    criterion = SpreadLoss(args)
 else:
     criterion = MarginLoss(num_classes=10) \
         if args.model_cifar == 'capsule' else nn.CrossEntropyLoss()

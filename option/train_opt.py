@@ -48,6 +48,7 @@ parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel 
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')
 parser.add_argument('--use_CE_loss', action='store_true')
+parser.add_argument('--use_spread_loss', action='store_true')
 parser.add_argument('--route_num', default=4, type=int)
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],

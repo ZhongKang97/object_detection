@@ -132,8 +132,10 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         # check = torch.eq(one_sample, one_sample[0])
         # if check.sum().data[0] == len(one_sample):
         #     print('output is the same across all classes: {:.4f}\n'.format(one_sample[0].data[0]))
-
-        loss = criterion(outputs, targets)
+        if opt.use_spread_loss:
+            loss = criterion(outputs, targets, epoch)
+        else:
+            loss = criterion(outputs, targets)
         if opt.use_KL:
             normal_losses.update(loss.data[0], inputs.size(0))
             loss_KL = opt.KL_factor * compute_KL(stats[-2], stats[-1])
@@ -259,7 +261,10 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
             if opt.multi_crop_test:
                 outputs = outputs.view(bs, ncrops, -1).mean(1)
 
-            loss = criterion(outputs, targets)
+            if opt.use_spread_loss:
+                loss = criterion(outputs, targets, epoch)
+            else:
+                loss = criterion(outputs, targets)
             # measure accuracy and record loss
             prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
             losses.update(loss.data[0], inputs.size(0))
