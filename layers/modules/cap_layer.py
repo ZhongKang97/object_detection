@@ -104,11 +104,12 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
                 {'X': list(range(21)), 'Y': avg_len}
     else:
         if KL_manner == 1:
-            std = torch.std(cos_v)
-            mean = torch.mean(cos_v)
+            # previous std is: 128 x 10 x 1152 x 1, we should have sample-wise std and mean
+            std = torch.std(cos_v.view(bs, -1), dim=1)      # 128 x 1
+            mean = torch.mean(cos_v.view(bs, -1), dim=1)    # 128 x 1
         elif KL_manner == 2:
-            std = torch.std(pred_mat_norm.view(-1, d_j), dim=0)
-            mean = torch.mean(pred_mat_norm.view(-1, d_j), dim=0)
+            std = torch.std(pred_mat_norm.view(-1, num_j*num_i, d_j), dim=1)     # 128 x 16
+            mean = torch.mean(pred_mat_norm.view(-1, num_j*num_i, d_j), dim=1)   # 128 x 16
         return mean, std
 # info = {
 #     'sample_index': 4,

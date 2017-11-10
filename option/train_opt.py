@@ -3,7 +3,7 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Capsule Object Detection')
-parser.add_argument('--experiment_name', default='cifar_base_104_KL_2')
+parser.add_argument('--experiment_name', default='cifar_base_104_KL')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -40,8 +40,9 @@ parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
 # v1 is the newly added capsule network
-# parser.add_argument('--cap_model', default='v5', type=str, help='only valid when model_cifar is [capsule]')
-parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, ...]')
+# parser.add_argument('--cap_model', default='v5', type=str,
+#                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
+parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
 parser.add_argument('--use_KL', action='store_true')
 parser.add_argument('--KL_manner', default=1, type=int)
 parser.add_argument('--KL_factor', default=.1, type=float)

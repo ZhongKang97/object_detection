@@ -26,7 +26,7 @@ train_loader = data.DataLoader(train_dset, args.train_batch,
 model = CapsNet(depth=20, num_classes=10, opts=args)
 if args.optim == 'sgd':
     optimizer = optim.SGD(model.parameters(), lr=args.lr,
-                          momentum=args.momentum, weight_decay=args.weight_decay)
+                          weight_decay=args.weight_decay, momentum=args.momentum, )
 elif args.optim == 'adam':
     optimizer = optim.Adam(model.parameters(), lr=args.lr,
                            weight_decay=args.weight_decay, betas=(args.beta1, 0.999))
@@ -115,16 +115,20 @@ else:
                 'best_test_acc':    best_acc,
                 'optimizer':        optimizer.state_dict(),
         }, is_best, args, epoch)
-        msg = 'status: <b>RUNNING</b><br/>' \
-              'curr best test acc {:.4f} at epoch {:d}<br/>' \
-              'curr lr {:f}<br/>' \
-              'epoch [{:d} | {:d}]'.format(
-                best_acc, best_epoch, new_lr, epoch, args.epochs)
+        if args.use_KL:
+            kl_info = '<br/>KL_factor: {:.4f}'.format(args.KL_factor)
+        else:
+            kl_info = ''
+        common_suffix = 'curr best test acc {:.4f} at epoch {:d}<br/>' \
+                        'curr lr {:f}<br/>' \
+                        'epoch [{:d} | {:d}]{:s}'.format(
+                            best_acc, best_epoch, new_lr, epoch,
+                            args.epochs, kl_info)
+        msg = 'status: <b>RUNNING</b><br/>' + common_suffix
         vis.vis.text(msg, win=200)
 
     print_log('Best acc: {:.4f}. Training done.'.format(best_acc), args.file_name)
-    msg = 'status: <b>DONE</b>\nbest test acc {:.4f} at epoch {:d}' \
-          '<br/>final lr at {:f}'.format(best_acc, best_epoch, new_lr)
+    msg = 'status: <b>DONE</b><br/>' + common_suffix
     vis.vis.text(msg, win=200)
 
 
