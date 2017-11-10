@@ -65,7 +65,7 @@ parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet |
 parser.add_argument('--save_epoch', default=20, type=int)
 
 # RUNTIME AND DISPLAY
-parser.add_argument('--manual_seed', default=2000, type=int)
+parser.add_argument('--manual_seed', default=-1, type=int)
 parser.add_argument('--num_workers', default=2, type=int, help='Number of workers used in dataloading')
 parser.add_argument('--visdom', default=True, type=str2bool, help='Use visdom to for loss visualization')
 parser.add_argument('--port', default=4000, type=int)
@@ -116,5 +116,7 @@ else:
     args.use_cuda = False
     torch.set_default_tensor_type('torch.FloatTensor')
 
+if args.manual_seed == -1:
+    args.manual_seed = random.randint(1, 10000)
 random.seed(args.manual_seed)
 torch.manual_seed(args.manual_seed)
