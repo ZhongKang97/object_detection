@@ -176,7 +176,7 @@ class CapLayer(nn.Module):
         elif b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
         if self.add_cap_droput:
-            self.cap_droput = nn.Dropout2d(p=0.2)
+            self.cap_droput = nn.Dropout2d(p=opts.dropout_p)
 
     def forward(self, input, target, curr_iter, vis):
 
