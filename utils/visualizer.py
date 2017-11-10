@@ -13,7 +13,8 @@ class Visualizer(object):
             self.display_win_id = 100
             self.dis_win_id_im = 300
 
-            self.loss_data = {'X': [], 'Y': [], 'legend': ['train_loss']}
+            legend = ['total_loss', 'KL_loss'] if self.opt.use_KL else ['train_loss']
+            self.loss_data = {'X': [], 'Y': [], 'legend': legend}
             self.acc_data = {'X': [], 'Y': [], 'legend': ['train_acc', 'train_acc5']}
             self.loss_data_test = {'X': [], 'Y': [], 'legend': ['test_loss']}
             self.acc_data_test = {'X': [], 'Y': [], 'legend': ['test_acc']}
@@ -32,9 +33,9 @@ class Visualizer(object):
                 prefix = 'Train' if train else 'Test'
                 if train:
                     if self.opt.use_KL:
-                        print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]\titer [{:d}/{:d}]\t\t'
-                                  'data: {:.3f}s | batch: {:.3f}s\t'
-                                  'loss: {:.5f}\t(KL: {:.5f} || normal: {:.5f})\t'
+                        print_log('{:s} [{:s}]\tepoch [{:d}/{:d}]|[{:d}/{:d}]\t'
+                                  'data: {:.3f}s |batch: {:.3f}s\t'
+                                  'loss: {:.5f}\t(KL: {:.5f} ||normal: {:.5f})\t'
                                   'acc: {:.5f}\tacc5: {:.5f}'.format(
                                     prefix, self.opt.experiment_name,
                                     epoch, self.opt.max_epoch, i, max_i,
@@ -64,8 +65,12 @@ class Visualizer(object):
         x_progress = epoch + float(i/max_i)
 
         if train:
-            self.loss_data['X'].append(x_progress)
-            self.loss_data['Y'].append(errors['loss'])
+            if self.opt.use_KL:
+                self.loss_data['X'].append([x_progress, x_progress])
+                self.loss_data['Y'].append([errors['loss'], errors['KL_loss']])
+            else:
+                self.loss_data['X'].append(x_progress)
+                self.loss_data['Y'].append(errors['loss'])
             self.acc_data['X'].append([x_progress, x_progress])
             self.acc_data['Y'].append([errors['acc'], errors['acc5']])
 
