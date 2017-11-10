@@ -3,7 +3,7 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Capsule Object Detection')
-parser.add_argument('--experiment_name', default='cifar_base_104_KL')
+parser.add_argument('--experiment_name', default='cifar_base_104_cap_droput')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -39,6 +39,7 @@ parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
+parser.add_argument('--add_cap_dropout', action='store_true')
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str,
 #                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')

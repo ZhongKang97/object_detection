@@ -147,6 +147,7 @@ class CapLayer(nn.Module):
         self.which_sample, self.which_j = 0, 0
         self.use_KL = opts.use_KL
         self.KL_manner = opts.KL_manner
+        self.add_cap_droput = opts.add_cap_dropout
 
         if w_version == 'v0':
             # DEPRECATED
@@ -174,6 +175,8 @@ class CapLayer(nn.Module):
             self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
         elif b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
+        if self.add_cap_droput:
+            self.cap_droput = nn.Dropout2d(p=0.2)
 
     def forward(self, input, target, curr_iter, vis):
 
@@ -217,7 +220,10 @@ class CapLayer(nn.Module):
                 if self.has_relu_in_W:
                     pred = self.relu(pred)
             # print('cap W time: {:.4f}'.format(time.time() - start))
-
+            # pred_i_j_d2
+            if self.add_cap_droput:
+                pred = self.cap_droput(pred.permute(0, 3, 1, 2))
+                pred = pred.permute(0, 2, 3, 1)
             # routing starts
             # start = time.time()
             for i in range(self.route_num):
