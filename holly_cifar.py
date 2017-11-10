@@ -42,7 +42,7 @@ print_log(model, args.file_name)
 if args.use_CE_loss:
     criterion = nn.CrossEntropyLoss()
 elif args.use_spread_loss:
-    criterion = SpreadLoss(args)
+    criterion = SpreadLoss(args, fix_m=args.fix_m)
 else:
     criterion = MarginLoss(num_classes=10) \
         if args.model_cifar == 'capsule' else nn.CrossEntropyLoss()

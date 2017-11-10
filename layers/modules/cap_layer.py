@@ -439,7 +439,9 @@ class MarginLoss(nn.Module):
 
 
 class SpreadLoss(nn.Module):
-    def __init__(self, opt, num_classes=10, m_low=0.2, m_high=0.9, margin_epoch=20):
+    def __init__(self, opt, num_classes=10,
+                 m_low=0.2, m_high=0.9, margin_epoch=20,
+                 fix_m=False):
         super(SpreadLoss, self).__init__()
         self.num_classes = num_classes
         self.total_epoch = opt.epochs
@@ -447,16 +449,20 @@ class SpreadLoss(nn.Module):
         self.m_high = m_high
         self.margin_epoch = margin_epoch
         self.interval = (m_high - m_low) / (self.total_epoch - 2*margin_epoch)
+        self.fix_m = fix_m
 
     def forward(self, output, target, epoch):
 
         bs = output.size(0)
-        if epoch < self.margin_epoch:
-            m = self.m_low
-        elif epoch >= self.total_epoch - self.margin_epoch:
+        if self.fix_m:
             m = self.m_high
         else:
-            m = self.m_low + self.interval * (epoch - self.margin_epoch)
+            if epoch < self.margin_epoch:
+                m = self.m_low
+            elif epoch >= self.total_epoch - self.margin_epoch:
+                m = self.m_high
+            else:
+                m = self.m_low + self.interval * (epoch - self.margin_epoch)
 
         target_output = torch.stack([output[i, target[i].data[0]] for i in range(bs)])
         loss = output - target_output + m
