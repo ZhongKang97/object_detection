@@ -40,6 +40,7 @@ parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
 parser.add_argument('--add_cap_dropout', action='store_true')
+parser.add_argument('--dropout_p', default=0.2, type=float)
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str,
 #                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
