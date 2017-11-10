@@ -10,7 +10,7 @@ CUDA_VISIBLE_DEVICES=2 python holly_cifar.py \
 --model_cifar=capsule \
 --epochs=300 \
 --schedule_cifar 150 225 \
---lr=0.01 \
+--lr=0.001 \
 --route_num=4 \
 --add_cap_dropout \
 --dropout_p=0.8 \
