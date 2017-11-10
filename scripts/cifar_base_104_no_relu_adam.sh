@@ -3,14 +3,19 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
 --experiment_name=cifar_base_104_no_relu_adam \
 --dataset=cifar \
 --model_cifar=capsule \
 --epochs=300 \
 --schedule_cifar 150 225 \
---lr=0.01 \
+--lr=0.005 \
 --optim=adam \
+--route_num=4 \
+--train_batch=128 \
+--test_batch=128 \
+--w_version=v2 \
+--b_init=zero \
 --deploy
 
 end=`date +%s`

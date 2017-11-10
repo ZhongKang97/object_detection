@@ -33,7 +33,7 @@ elif args.optim == 'adam':
 elif args.optim == 'rmsprop':
     optimizer = optim.RMSprop(model.parameters(), lr=args.lr,
                                weight_decay=args.weight_decay, momentum=args.momentum,
-                               alpha=0.9, centered=True)
+                               alpha=0.9, centered=False)
 
 if args.scheduler is not None:
     scheduler = set_lr_schedule(optimizer, args.scheduler)
