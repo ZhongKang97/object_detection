@@ -4,7 +4,7 @@ start=`date +%s`
 
 # based on 'cifar_base_104_no_relu_multi_crop.sh'
 # train and test
-CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=2 python holly_cifar.py \
 --experiment_name=cifar_base_104_no_relu_droput_b \
 --dataset=cifar \
 --model_cifar=capsule \
