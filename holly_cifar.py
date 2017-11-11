@@ -52,10 +52,11 @@ elif args.model_cifar == 'resnet':
 
 if args.use_cuda:
     criterion = criterion.cuda()
-    if args.deploy:
-        model = torch.nn.DataParallel(model).cuda()
-    else:
-        model = model.cuda()
+    # if args.deploy:
+    # TODO: zombie process
+    #     model = torch.nn.DataParallel(model).cuda()
+    # else:
+    model = model.cuda()
 cudnn.benchmark = True
 
 if args.test_only:
