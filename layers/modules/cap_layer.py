@@ -186,6 +186,8 @@ class CapLayer(nn.Module):
             pred_list.extend(target.data)
 
         if self.w_version == 'v1' or self.w_version == 'v2':
+
+            # 1. pred_i_j_d2
             # start = time.time()
             if self.w_version == 'v1':
                 input = input.view(bs, self.num_shared, -1, self.in_dim)
@@ -201,23 +203,25 @@ class CapLayer(nn.Module):
                                    self.num_out_caps, pred.size(2))
             elif self.w_version == 'v2':
                 raw_output = self.W(input)
-                # bs x 5120 x 6 x 6 -> bs x 32 x 10 x 16 x 6 x 6 -> bs x 32 x 6 x 6 x 10 x 16
+                # bs, 5120, 6, 6
+                # -> bs, 32, 10, 16, 6, 6
+                # -> bs, 32, 6, 6, 10, 16
                 spatial_size = raw_output.size(2)
                 raw_output_1 = raw_output.resize(bs,
                                                  self.num_shared, self.num_out_caps, self.out_dim,
                                                  spatial_size, spatial_size).permute(0, 1, 4, 5, 2, 3)
                 pred = raw_output_1.resize(bs,
-                                           self.num_shared*spatial_size*spatial_size, self.num_out_caps, self.out_dim)
+                                           self.num_shared*spatial_size*spatial_size,
+                                           self.num_out_caps, self.out_dim)
                 if self.has_relu_in_W:
                     pred = self.relu(pred)
             # print('cap W time: {:.4f}'.format(time.time() - start))
-            # pred_i_j_d2
 
             if self.add_cap_droput:
                 pred = self.cap_droput(pred.permute(0, 3, 1, 2))
                 pred = pred.permute(0, 2, 3, 1)
 
-            # routing starts
+            # 2. routing
             # start = time.time()
             for i in range(self.route_num):
 
