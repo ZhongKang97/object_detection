@@ -44,7 +44,8 @@ if args.model_cifar == 'capsule':
     elif args.use_spread_loss:
         criterion = SpreadLoss(args, fix_m=args.fix_m,
                                num_classes=train_loader.dataset.num_classes)
-    else: #
+    else:
+        # default loss
         criterion = MarginLoss(num_classes=train_loader.dataset.num_classes)
 elif args.model_cifar == 'resnet':
     criterion = nn.CrossEntropyLoss()

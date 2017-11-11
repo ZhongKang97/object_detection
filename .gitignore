@@ -1,4 +1,5 @@
 data/cifar-100-python
+data/fmnist
 data/raw
 data/processed
 *.json
@@ -11,6 +12,7 @@ data/cifar-10-batches-py
 *.txt
 *.pth
 *.pkl
+*.mat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -71,39 +73,14 @@ local_settings.py
 instance/
 .webassets-cache
 
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
 # IPython Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# dotenv
 .env
 
 # virtualenv
 venv/
 ENV/
-
-# Spyder project settings
-.spyderproject
-
-# Rope project settings
-.ropeproject
-
-# atom remote-sync package
-.remote-sync.json
 
 # weights
 weights/
@@ -111,30 +88,6 @@ weights/
 #DS_Store
 .DS_Store
 
-# dev stuff
-eval/
-eval.ipynb
-dev.ipynb
-.vscode/
-
-# not ready
-videos/
-templates/
-data/ssd_dataloader.py
-data/datasets/
-doc/visualize.py
-read_results.py
-ssd300_120000/
-demos/live
-webdemo.py
-test_data_aug.py
-
-# attributes
 
 # pycharm
 .idea/
-
-# temp checkout soln
-data/datasets/
-data/ssd_dataloader.py
-
