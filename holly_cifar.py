@@ -40,9 +40,10 @@ print_log(model, args.file_name)
 if args.use_CE_loss:
     criterion = nn.CrossEntropyLoss()
 elif args.use_spread_loss:
-    criterion = SpreadLoss(args, fix_m=args.fix_m)
+    criterion = SpreadLoss(args, fix_m=args.fix_m,
+                           num_classes=train_loader.dataset.num_classes)
 else:
-    criterion = MarginLoss(num_classes=10) \
+    criterion = MarginLoss(num_classes=train_loader.dataset.num_classes) \
         if args.model_cifar == 'capsule' else nn.CrossEntropyLoss()
 
 if args.use_cuda:
