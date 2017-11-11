@@ -31,8 +31,6 @@ class CapsNet(nn.Module):
             self.cap_model = 'v0'
         self.cap_N = opts.cap_N
         self.structure = opts.model_cifar   # capsule or resnet
-        self.skip_pre_squash = opts.skip_pre_squash
-        self.skip_pre_transfer = opts.skip_pre_transfer
 
         channel_in = 256 if depth == 50 else 64
         self.tranfer_conv = nn.Conv2d(channel_in, 256, kernel_size=3)  # 256x8x8 -> 256x6x6
