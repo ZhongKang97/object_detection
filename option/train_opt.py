@@ -3,8 +3,8 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Convolution Capsule Network')
-parser.add_argument('--experiment_name', default='cifar_base_104_KL')
-parser.add_argument('--dataset', default='cifar100',
+parser.add_argument('--experiment_name', default='cifar_base_104_no_relu_multi_crop')
+parser.add_argument('--dataset', default='fmnist',
                     help='[ voc | coco | cifar10 | cifar100 | svhn | fmnist ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -43,7 +43,7 @@ parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
 # network, v0 is the structure in the paper
 parser.add_argument('--cap_model', default='v0', type=str,
-                  help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
+                    help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')

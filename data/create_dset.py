@@ -29,7 +29,8 @@ def create_dataset(opts, phase=None):
         # dataset = dset.CocoDetection(root=(data_root + '/train2014'),
         #                              annFile=(data_root + '/annotations/' + anno_file),
         #                              transform=transforms.ToTensor())
-    elif name == 'cifar10' or name == 'cifar100':
+    elif name == 'cifar10' or name == 'cifar100' \
+            or name == 'svhn' or name == 'fmnist':
         # add the data augmentation here
         if phase == 'train':
             # T.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
@@ -62,6 +63,15 @@ def create_dataset(opts, phase=None):
             dataset = dset.CIFAR100(root='data', train=phase == 'train',
                                     transform=transform, download=True)
             dataset.num_classes = 100
+        elif name == 'svhn':
+            split_name = 'train' if phase == 'train' else 'test'
+            dataset = dset.SVHN(root='data', split=split_name,
+                                transform=transform, download=True)
+            dataset.num_classes = 10
+        elif name == 'fmnist':
+            dataset = dset.FashionMNIST(root='data/fmnist', train=phase == 'train',
+                                        transform=transform, download=True)
+            dataset.num_classes = 10
         dataset.name = name
     else:
         raise NameError('Unknown dataset')
