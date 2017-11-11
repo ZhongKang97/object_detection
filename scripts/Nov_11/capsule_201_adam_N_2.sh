@@ -3,8 +3,8 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
---experiment_name=capsule_201_adam \
+CUDA_VISIBLE_DEVICES=4 python holly_cifar.py \
+--experiment_name=capsule_201_adam_N_2 \
 --dataset=cifar10 \
 --model_cifar=capsule \
 --cap_model=v1 \
