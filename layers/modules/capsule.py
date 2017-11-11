@@ -47,6 +47,7 @@ class CapsNet(nn.Module):
             self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
                                       in_dim=8, out_dim=16,
                                       num_shared=32)
+        # different structures below
         if self.cap_model == 'v1' or self.cap_model == 'v2' or self.cap_model == 'v5':
             self.cap_dim_1 = 16
             # transfer convolution to capsule
@@ -129,6 +130,7 @@ class CapsNet(nn.Module):
         # print('passed init')
 
     def forward(self, x, target=None, curr_iter=0, vis=None):
+        stats = []
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -164,8 +166,7 @@ class CapsNet(nn.Module):
                 x = self.bucket(x)
             x = self.cap4(x)   # use the head of v2
         else:
-            # v1, v0, capsule_original, baseline, etc.
-
+            # v1, v0, and resnet.
             x = self.tranfer_conv(x)
             x = self.tranfer_bn(x)
             x = self.tranfer_relu(x)        # bs x 64 x 6 x 6

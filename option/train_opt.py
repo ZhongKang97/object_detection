@@ -2,7 +2,7 @@ import argparse
 import random
 from utils.util import *
 
-parser = argparse.ArgumentParser(description='Capsule Object Detection')
+parser = argparse.ArgumentParser(description='Convolution Capsule Network')
 parser.add_argument('--experiment_name', default='cifar_base_104_KL')
 parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
 parser.add_argument('--deploy', action='store_true')
@@ -17,20 +17,20 @@ parser.add_argument('--gamma', default=0.1, type=float)
 parser.add_argument('--beta1', type=float, default=0.8, help='momentum term of adam')
 
 # VOC and COCO
-# if args_temp.dataset == 'voc' or args_temp.dataset == 'coco':
-# training config
-parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
-parser.add_argument('--max_iter', default=130000, type=int, help='Number of training iterations')
-parser.add_argument('--no_pretrain', action='store_true', help='default is using pretrain')
-parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
-parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
-# parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
-parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
-# TODO: MUST comment the schedule if you run CIFAR
-# parser.add_argument('--schedule', default=[80000, 100000, 120000], nargs='+')
-# model params
-parser.add_argument('--ssd_dim', default=512, type=int)
-parser.add_argument('--prior_config', default='v2_512', type=str)
+# # if args_temp.dataset == 'voc' or args_temp.dataset == 'coco':
+# # training config
+# parser.add_argument('--version', default='v2', help='conv11_2(v2) or pool6(v1) as last layer')
+# parser.add_argument('--max_iter', default=130000, type=int, help='Number of training iterations')
+# parser.add_argument('--no_pretrain', action='store_true', help='default is using pretrain')
+# parser.add_argument('--basenet', default='vgg16_reducedfc.pth', help='pretrained base model')
+# parser.add_argument('--resume', default=None, type=str, help='Resume from checkpoint')
+# # parser.add_argument('--resume', default='ssd300_0712_iter_30', type=str, help='Resume from checkpoint')
+# parser.add_argument('--batch_size', default=2, type=int, help='Batch size for training')
+# # TODO: MUST comment the schedule if you run CIFAR
+# # parser.add_argument('--schedule', default=[80000, 100000, 120000], nargs='+')
+# # model params
+# parser.add_argument('--ssd_dim', default=512, type=int)
+# parser.add_argument('--prior_config', default='v2_512', type=str)
 
 # CIFAR
 # elif args_temp.dataset == 'cifar':
@@ -39,13 +39,16 @@ parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
+
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str,
 #                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
 parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
-parser.add_argument('--use_KL', action='store_true')
+
+parser.add_argument('--use_KL', action='store_false')
 parser.add_argument('--KL_manner', default=1, type=int)
 parser.add_argument('--KL_factor', default=.1, type=float)
+
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')

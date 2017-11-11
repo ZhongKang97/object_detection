@@ -23,7 +23,7 @@ train_dset = create_dataset(args, 'train')
 train_loader = data.DataLoader(train_dset, args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
-model = CapsNet(depth=20, num_classes=10, opts=args)
+model = CapsNet(depth=20, num_classes=train_dset.num_classes, opts=args)
 if args.optim == 'sgd':
     optimizer = optim.SGD(model.parameters(), lr=args.lr,
                           weight_decay=args.weight_decay, momentum=args.momentum, )
