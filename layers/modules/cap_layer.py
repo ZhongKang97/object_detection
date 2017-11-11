@@ -125,54 +125,46 @@ class CapLayer(nn.Module):
     def __init__(self, opts, num_in_caps, num_out_caps,
                  in_dim, out_dim, num_shared):
         super(CapLayer, self).__init__()
-        # legacy
-        route_num = opts.route_num
-        b_init = opts.b_init
-        w_version = opts.w_version
-        do_squash = opts.do_squash
-        look_into_details = opts.look_into_details
-        has_relu_in_W = opts.has_relu_in_W
-
-        self.non_target_j = opts.non_target_j
-        self.has_relu_in_W = has_relu_in_W
         # TODO: this is an internal argument
         self.FIND_DIFF = False
+        self.non_target_j = opts.non_target_j
+        self.has_relu_in_W = opts.has_relu_in_W
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.num_shared = num_shared
-        self.route_num = route_num
-        self.w_version = w_version
+        self.route_num = opts.route_num
+        self.w_version = opts.w_version
         self.num_out_caps = num_out_caps
-        self.look_into_details = look_into_details
+        self.look_into_details = opts.look_into_details
         self.which_sample, self.which_j = 0, 0
         self.use_KL = opts.use_KL
         self.KL_manner = opts.KL_manner
         self.add_cap_droput = opts.add_cap_dropout
 
-        if w_version == 'v0':
+        if opts.w_version == 'v0':
             # DEPRECATED
             # wrong version
             self.W = [nn.Linear(in_dim, out_dim, bias=False) for _ in range(num_shared)]
-        elif w_version == 'v1':
+        elif opts.w_version == 'v1':
             # DEPRECATED, FC implemented
             # 1152 (32 x 36), 8, 16, 10
             # W[x][y], x = 32, y = 10
             self.W = [[nn.Linear(in_dim, out_dim, bias=False)] * num_out_caps for _ in range(num_shared)]
-        elif w_version == 'v2':
+        elif opts.w_version == 'v2':
             # faster
             self.W = nn.Conv2d(256, num_shared*num_out_caps*out_dim,
                                kernel_size=1, stride=1, groups=num_shared)
             if self.has_relu_in_W:
                 self.relu = nn.ReLU(True)
-        elif w_version == 'v3':
-            # for fair comparison
+        elif opts.w_version == 'v3':
+            # for fair comparison, use all FC layers
             self.avgpool = nn.AvgPool2d(6)
-            self.fc = nn.Linear(256, 160)
-            self.do_squash = do_squash
+            self.fc = nn.Linear(256, 16*self.num_out_caps)
+            self.do_squash = opts.do_squash
 
-        if b_init == 'rand':
+        if opts.b_init == 'rand':
             self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
-        elif b_init == 'zero':
+        elif opts.b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
         if self.add_cap_droput:
             self.cap_droput = nn.Dropout2d(p=opts.dropout_p)
@@ -185,8 +177,8 @@ class CapLayer(nn.Module):
         avg_len = []
         mean, std = [], []
         bs, in_channels, h, w = input.size()
-        # assert in_channels == self.num_shared * self.in_dim
-        b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_ji along batch dim
+        # expand b_ji along batch dim
+        b = self.b.expand(bs, self.b.size(0), self.b.size(1))
 
         if self.FIND_DIFF:
             pred_list = []
@@ -220,9 +212,11 @@ class CapLayer(nn.Module):
                     pred = self.relu(pred)
             # print('cap W time: {:.4f}'.format(time.time() - start))
             # pred_i_j_d2
+
             if self.add_cap_droput:
                 pred = self.cap_droput(pred.permute(0, 3, 1, 2))
                 pred = pred.permute(0, 2, 3, 1)
+
             # routing starts
             # start = time.time()
             for i in range(self.route_num):
@@ -445,7 +439,7 @@ class MarginLoss(nn.Module):
 
 
 class SpreadLoss(nn.Module):
-    def __init__(self, opt, num_classes=10,
+    def __init__(self, opt, num_classes,
                  m_low=0.2, m_high=0.9, margin_epoch=20,
                  fix_m=False):
         super(SpreadLoss, self).__init__()

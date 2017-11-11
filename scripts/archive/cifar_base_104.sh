@@ -13,6 +13,7 @@ CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
 --route_num=4 \
 --train_batch=128 \
 --test_batch=128 \
+--has_relu_in_W \
 --w_version=v2 \
 --b_init=zero \
 --deploy

@@ -36,39 +36,39 @@ parser.add_argument('--beta1', type=float, default=0.8, help='momentum term of a
 # CIFAR
 # elif args_temp.dataset == 'cifar':
 # for cifar only
+parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
-parser.add_argument('--add_cap_dropout', action='store_true')
-parser.add_argument('--dropout_p', default=0.2, type=float)
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str,
 #                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
-parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
-
-parser.add_argument('--use_KL', action='store_true')
-parser.add_argument('--KL_manner', default=1, type=int)
-parser.add_argument('--KL_factor', default=.1, type=float)
-
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')
+# loss
+parser.add_argument('--use_KL', action='store_true')
+parser.add_argument('--KL_manner', default=1, type=int)
+parser.add_argument('--KL_factor', default=.1, type=float)
 parser.add_argument('--use_CE_loss', action='store_true')
 parser.add_argument('--use_spread_loss', action='store_true')
 parser.add_argument('--fix_m', action='store_true', help='valid for use_spread_loss only')
+# FOR cap_model=v0 only:
+parser.add_argument('--look_into_details', action='store_true')
+parser.add_argument('--add_cap_dropout', action='store_true')
+parser.add_argument('--dropout_p', default=0.2, type=float)
+parser.add_argument('--has_relu_in_W', action='store_true')
+parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone') # squash is much better
+parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
+parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
+# general for all cap_model
 parser.add_argument('--route_num', default=4, type=int)
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
-parser.add_argument('--look_into_details', action='store_true')
-parser.add_argument('--has_relu_in_W', action='store_true')
-# squash is much better
-parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone')
-parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand]')
-parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
 parser.add_argument('--save_epoch', default=20, type=int)
 
 # RUNTIME AND DISPLAY
