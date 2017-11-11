@@ -3,6 +3,7 @@
 start=`date +%s`
 
 # train and test
+# '--test_batch=32' has to be small
 CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
 --experiment_name=cifar_base_104_no_relu_multi_crop_cifar100 \
 --dataset=cifar100 \
@@ -12,7 +13,7 @@ CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
 --lr=0.01 \
 --route_num=4 \
 --train_batch=128 \
---test_batch=128 \
+--test_batch=32 \
 --w_version=v2 \
 --multi_crop_test \
 --deploy
