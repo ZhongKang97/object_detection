@@ -44,9 +44,7 @@ parser.add_argument('--multi_crop_test', action='store_true')
 # network, v0 is the structure in the paper
 parser.add_argument('--cap_model', default='v0', type=str,
                     help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
-parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
-parser.add_argument('--skip_pre_transfer', action='store_true')
-parser.add_argument('--skip_pre_squash', action='store_true')
+parser.add_argument('--cap_N', default=1, type=int, help='for v5 only, parallel N CapLayers')
 # loss
 parser.add_argument('--use_KL', action='store_true')
 parser.add_argument('--KL_manner', default=1, type=int)

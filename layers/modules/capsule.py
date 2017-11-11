@@ -96,11 +96,11 @@ class CapsNet(nn.Module):
                 x = self.avgpool(x)
                 x = x.view(x.size(0), -1)
                 x = self.fc(x)
-
-        if self.cap_model == 'v1':
+        elif self.cap_model == 'v1':
             x = self.buffer(x)
             x = self._do_squash(x)
-            x = self.basic_cap(x)
+            for i in range(self.cap_N):
+                x = self.basic_cap(x)
             x = self.cls_cap(x)
         else:
             raise NameError('Unknown structure or capsule model type.')
