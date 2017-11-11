@@ -345,59 +345,53 @@ class CapLayer(nn.Module):
 
 class CapLayer2(nn.Module):
     """
-        Convolutional Capsule Layer
-        input:      [bs, channel_num_in (d1), spatial_size_1, spatial_size_1]        # eg, bs, 16, 32, 32
-        output:     [bs, channel_num_out (d2), spatial_size_2, spatial_size_2]       # eg, bs, 20, 16, 16
+        Convolution Capsule Layer
+        input:      [bs, in_dim (d1), spatial_size_1, spatial_size_1]
+        output:     [bs, out_dim (d2), spatial_size_2, spatial_size_2]
+                    or [bs, out_dim (d2), spatial_size_2] if as_final_output=True
 
         Args:
-                    channel_num_in: dim of input capsules, d1, in_dim
-                    channel_num_out: dim of output capsules, d2, out_dim
-                    number of input capsules,   i: spatial_size_1 **2, num_in_caps
-                    number of output capsules,  j: spatial_size_2 **2, num_out_caps
-                                                or j: spatial_size_2 if as final output, num_out_caps
+                    in_dim:             dim of input capsules, d1
+                    out_dim:            dim of output capsules, d2
+                    spatial_size_1:     spatial_size_1 ** 2 = num_in_caps, total # of input caps
+                    spatial_size_2:     spatial_size_2 ** 2 = num_out_caps, total # of output caps
+                    as_final_output:    if True, spatial_size_2 = num_out_caps
 
-                    Convolution parameters (W):
-                        nn.Conv2d(IN, OUT, 1)
-                        input to the convolution: bs, 16, 32, 32
-                        output to the convolution: bs, (16x16x20), 32, 32, known as pred_i_j_d2
-                            Note:
-                                IN = channel_num_in (d1)
-                                OUT = channel_num_out (d2) * spatial_size_2 **2
-                    Propogation params (b or c):
-                        shape: b_bs_j_i
+        Convolution parameters (W): nn.Conv2d(IN, OUT, kernel_size=1)
+        Propagation coefficients (b or c): bs_j_i
     """
     def __init__(self,
-                 channel_num_in, channel_num_out,
-                 spatial_size_1, spatial_size_2,
-                 route_num, b_init, w_version, as_final_output=False):
+                 in_dim, out_dim, spatial_size_1, spatial_size_2,
+                 route_num, as_final_output=False):
         super(CapLayer2, self).__init__()
         self.num_in_caps = int(spatial_size_1 ** 2)
         if as_final_output:
             self.num_out_caps = spatial_size_2
         else:
             self.num_out_caps = int(spatial_size_2 ** 2)
-        self.in_dim = channel_num_in
-        self.out_dim = channel_num_out
+        self.in_dim = in_dim
+        self.out_dim = out_dim
         self.route_num = route_num
-        self.w_version = w_version
         self.as_final_output = as_final_output
 
-        if w_version == 'v2':
-            self.W = nn.Conv2d(self.in_dim, self.out_dim*self.num_out_caps, kernel_size=1, stride=1)
-        if b_init == 'rand':
-            self.b = Variable(torch.rand(self.num_out_caps, self.num_in_caps), requires_grad=False)
-        elif b_init == 'zero':
-            self.b = Variable(torch.zeros(self.num_out_caps, self.num_in_caps), requires_grad=False)
+        self.W = nn.Conv2d(self.in_dim, self.out_dim*self.num_out_caps, kernel_size=1, stride=1)
+        # if b_init == 'rand':
+        #     self.b = Variable(torch.rand(self.num_out_caps, self.num_in_caps), requires_grad=False)
+        # elif b_init == 'zero':
+        #     self.b = Variable(torch.zeros(self.num_out_caps, self.num_in_caps), requires_grad=False)
 
     def forward(self, x):
         bs = x.size(0)
-        b = self.b.expand(bs, self.b.size(0), self.b.size(1))  # expand b_j,i along batch dim
+        # generate random b on-the-fly
+        b = Variable(torch.rand(bs, self.num_out_caps, self.num_in_caps), requires_grad=False)
 
         start = time.time()
-        # x: bs, d1, 32, 32 -> bs, d2x16x16, 32, 32
+        # x: bs, d1, 32, 32
+        # -> W(x): bs, d2x16x16, 32, 32
         pred = self.W(x)
         pred = pred.resize(bs, self.num_out_caps, self.out_dim, self.num_in_caps)
-        pred = pred.permute(0, 3, 1, 2)   # pred_i_j_d2
+        pred = pred.permute(0, 3, 1, 2)
+        # pred_i_j_d2
         # print('cap W time: {:.4f}'.format(time.time() - start))
 
         # routing starts
@@ -415,9 +409,10 @@ class CapLayer2(nn.Module):
             b = torch.add(b, delta_b)
         # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
         # routing ends
+        # the resultant v: bs, num_out_caps, in_dim
 
-        # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16
         if not self.as_final_output:
+            # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16
             spatial_out = int(math.sqrt(self.num_out_caps))
             v = v.permute(0, 2, 1).resize(bs, self.out_dim, spatial_out, spatial_out)
         return v
