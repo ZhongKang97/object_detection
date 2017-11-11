@@ -3,9 +3,9 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=4 python holly_cifar.py \
---experiment_name=cifar_base_104_no_relu_multi_crop \
---dataset=cifar \
+CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
+--experiment_name=cifar_base_104_no_relu_multi_crop_cifar100 \
+--dataset=cifar100 \
 --model_cifar=capsule \
 --epochs=300 \
 --schedule_cifar 150 225 \
@@ -14,7 +14,6 @@ CUDA_VISIBLE_DEVICES=4 python holly_cifar.py \
 --train_batch=128 \
 --test_batch=128 \
 --w_version=v2 \
---b_init=zero \
 --multi_crop_test \
 --deploy
 

@@ -41,9 +41,9 @@ parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
-# v1 is the newly added capsule network
-# parser.add_argument('--cap_model', default='v5', type=str,
-#                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
+# network, v0 is the structure in the paper
+parser.add_argument('--cap_model', default='v0', type=str,
+                  help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 parser.add_argument('--skip_pre_transfer', action='store_true')
 parser.add_argument('--skip_pre_squash', action='store_true')
