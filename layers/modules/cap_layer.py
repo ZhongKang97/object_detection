@@ -206,6 +206,7 @@ class CapLayer(nn.Module):
                 # bs, 5120, 6, 6
                 # -> bs, 32, 10, 16, 6, 6
                 # -> bs, 32, 6, 6, 10, 16
+                # -> bs, 1152, 10, 16
                 spatial_size = raw_output.size(2)
                 raw_output_1 = raw_output.resize(bs,
                                                  self.num_shared, self.num_out_caps, self.out_dim,
