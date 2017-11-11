@@ -16,7 +16,8 @@ class CapsNet(nn.Module):
         n = (depth - 2) / 6
         block = Bottleneck if depth >= 44 else BasicBlock
         self.inplanes = 16
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1, bias=False)
+        input_ch = 1 if opts.dataset == 'fmnist' else 3
+        self.conv1 = nn.Conv2d(input_ch, 16, kernel_size=3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 16, n)
