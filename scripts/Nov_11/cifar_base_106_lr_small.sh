@@ -3,7 +3,7 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=7 python holly_cifar.py \
 --experiment_name=cifar_base_106_lr_small \
 --dataset=cifar10 \
 --model_cifar=capsule \
