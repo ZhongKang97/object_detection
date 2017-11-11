@@ -3,9 +3,9 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=4 python holly_cifar.py \
---experiment_name=cifar_base_105_squash \
---dataset=cifar10 \
+CUDA_VISIBLE_DEVICES=5 python holly_cifar.py \
+--experiment_name=cifar_base_105_squash_cifar100 \
+--dataset=cifar100 \
 --model_cifar=capsule \
 --epochs=300 \
 --schedule_cifar 150 225 \
