@@ -4,7 +4,8 @@ from utils.util import *
 
 parser = argparse.ArgumentParser(description='Convolution Capsule Network')
 parser.add_argument('--experiment_name', default='cifar_base_104_KL')
-parser.add_argument('--dataset', default='cifar', help='[ voc | coco | cifar ]')
+parser.add_argument('--dataset', default='cifar100',
+                    help='[ voc | coco | cifar10 | cifar100 | svhn | fmnist ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
 
@@ -39,13 +40,14 @@ parser.add_argument('--draw_hist', action='store_true')
 parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
-
+parser.add_argument('--add_cap_dropout', action='store_true')
+parser.add_argument('--dropout_p', default=0.2, type=float)
 # v1 is the newly added capsule network
 # parser.add_argument('--cap_model', default='v5', type=str,
 #                   help='only valid when model_cifar is [capsule], v0, v1, v2, v4, v5')
 parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
 
-parser.add_argument('--use_KL', action='store_false')
+parser.add_argument('--use_KL', action='store_true')
 parser.add_argument('--KL_manner', default=1, type=int)
 parser.add_argument('--KL_factor', default=.1, type=float)
 

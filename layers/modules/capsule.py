@@ -7,7 +7,7 @@ import time
 
 
 class CapsNet(nn.Module):
-    def __init__(self, depth, opts, num_classes=100):
+    def __init__(self, opts, num_classes=100, depth=20):
         super(CapsNet, self).__init__()
 
         # ResNet part

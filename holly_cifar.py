@@ -16,14 +16,12 @@ args.show_test_after_epoch = -1
 args = show_jot_opt(args)
 vis = Visualizer(args)
 
-test_dset = create_dataset(args, 'test')
-test_loader = data.DataLoader(test_dset, args.test_batch,
+test_loader = data.DataLoader(create_dataset(args, 'test'), args.test_batch,
                               num_workers=args.num_workers, shuffle=False)
-train_dset = create_dataset(args, 'train')
-train_loader = data.DataLoader(train_dset, args.train_batch,
+train_loader = data.DataLoader(create_dataset(args, 'train'), args.train_batch,
                                num_workers=args.num_workers, shuffle=True)
 
-model = CapsNet(depth=20, num_classes=train_dset.num_classes, opts=args)
+model = CapsNet(num_classes=train_loader.dataset.num_classes, opts=args)
 if args.optim == 'sgd':
     optimizer = optim.SGD(model.parameters(), lr=args.lr,
                           weight_decay=args.weight_decay, momentum=args.momentum, )
