@@ -362,7 +362,8 @@ class CapLayer2(nn.Module):
     """
     def __init__(self,
                  in_dim, out_dim, spatial_size_1, spatial_size_2,
-                 route_num, as_final_output=False):
+                 route_num, as_final_output=False,
+                 shared_size=-1, shared_group=1):
         super(CapLayer2, self).__init__()
         self.num_in_caps = int(spatial_size_1 ** 2)
         if as_final_output:
@@ -373,12 +374,21 @@ class CapLayer2(nn.Module):
         self.out_dim = out_dim
         self.route_num = route_num
         self.as_final_output = as_final_output
+        self.shared_size = shared_size
+        self.shared_group = shared_group
+        if shared_size == -1:
+            self.num_conv_groups = 1
+        else:
+            assert spatial_size_1 % shared_size == 0
+            self.num_conv_groups = int((spatial_size_1/shared_size) ** 2)
+        if shared_group > 1:
+            self.learnable_b = Variable(
+                torch.normal(means=torch.zeros(shared_group), std=torch.ones(shared_group)),
+                requires_grad=True)
 
-        self.W = nn.Conv2d(self.in_dim, self.out_dim*self.num_out_caps, kernel_size=1, stride=1)
-        # if b_init == 'rand':
-        #     self.b = Variable(torch.rand(self.num_out_caps, self.num_in_caps), requires_grad=False)
-        # elif b_init == 'zero':
-        #     self.b = Variable(torch.zeros(self.num_out_caps, self.num_in_caps), requires_grad=False)
+        IN = int(self.in_dim * self.num_conv_groups)
+        OUT = int(self.out_dim * self.num_out_caps * self.num_conv_groups / self.shared_group)
+        self.W = nn.Conv2d(IN, OUT, groups=self.num_conv_groups, kernel_size=1, stride=1)
 
     def forward(self, x):
         bs = x.size(0)
@@ -386,10 +396,21 @@ class CapLayer2(nn.Module):
         b = Variable(torch.rand(bs, self.num_out_caps, self.num_in_caps), requires_grad=False)
 
         start = time.time()
-        # x: bs, d1, 32, 32
-        # -> W(x): bs, d2x16x16, 32, 32
+        # x: bs, d1, 32 (spatial_size_1), 32
+        # -> W(x): bs, d2x16x16, 32 (spatial_size_1), 32
+        if self.num_conv_groups != 1:
+            # reshape the input x first
+            x = x.resize(bs, self.in_dim * self.num_conv_groups, self.shared_size, self.shared_size)
+
         pred = self.W(x)
-        pred = pred.resize(bs, self.num_out_caps, self.out_dim, self.num_in_caps)
+        pred = pred.resize(bs, int(self.num_out_caps / self.shared_group), self.out_dim, self.num_in_caps)
+
+        if self.shared_group != 1:
+            raw_pred = pred
+            pred = raw_pred + self.learnable_b[0].expand_as(raw_pred)
+            for ind in range(1, self.shared_group):
+                pred = torch.cat((pred, raw_pred + self.learnable_b[ind].expand_as(raw_pred)), dim=1)
+        assert pred.size(1) == self.num_out_caps
         pred = pred.permute(0, 3, 1, 2)
         # pred_i_j_d2
         # print('cap W time: {:.4f}'.format(time.time() - start))
@@ -409,7 +430,7 @@ class CapLayer2(nn.Module):
             b = torch.add(b, delta_b)
         # print('cap Route (r={:d}) time: {:.4f}'.format(self.route_num, time.time() - start))
         # routing ends
-        # the resultant v: bs, num_out_caps, in_dim
+        # v: bs, num_out_caps, out_dim
 
         if not self.as_final_output:
             # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16

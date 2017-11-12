@@ -48,13 +48,21 @@ class CapsNet(nn.Module):
         else:
             # different structures below
             self.buffer = nn.Sequential(*[
-                nn.Conv2d(64, 64, kernel_size=1),
+                nn.Conv2d(64, 64, kernel_size=3, padding=1),
                 nn.ReLU(True)
             ])
             # then do squash in the forward pass
             # the new convolution capsule idea
             self.basic_cap = CapLayer2(64, 64, 8, 8, route_num=opts.route_num)
             self.cls_cap = CapLayer2(64, 64, 8, 10, as_final_output=True, route_num=opts.route_num)
+
+            self.cap_smaller_in_share = CapLayer2(
+                64, 64, 8, 8, shared_size=4, route_num=opts.route_num)
+            self.cls_smaller_in_share = CapLayer2(
+                64, 64, 8, 10, shared_size=4, as_final_output=True, route_num=opts.route_num)
+
+            self.cap_smaller_in_out_share = CapLayer2(
+                64, 64, 8, 8, shared_size=4, shared_group=2, route_num=opts.route_num)
 
         # init the network
         for m in self.modules():
@@ -84,7 +92,7 @@ class CapsNet(nn.Module):
         if self.structure == 'resnet' or self.cap_model == 'v0':
             x = self.tranfer_conv(x)
             x = self.tranfer_bn(x)
-            x = self.tranfer_relu(x)        # bs x 64 x 6 x 6
+            x = self.tranfer_relu(x)        # bs x 256 x 6 x 6
             if self.structure == 'capsule':
                 # print('conv time: {:.4f}'.format(time.time() - start))
                 start = time.time()
@@ -100,6 +108,18 @@ class CapsNet(nn.Module):
             for i in range(self.cap_N):
                 x = self.basic_cap(x)
             x = self.cls_cap(x)
+        elif self.cap_model == 'v2':
+            x = self.buffer(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                x = self.cap_smaller_in_share(x)
+            x = self.cls_smaller_in_share(x)
+        elif self.cap_model == 'v3':
+            x = self.buffer(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                x = self.cap_smaller_in_out_share(x)
+            x = self.cls_smaller_in_share(x)
         else:
             raise NameError('Unknown structure or capsule model type.')
         return x, stats
