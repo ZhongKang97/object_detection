@@ -3,7 +3,7 @@
 start=`date +%s`
 
 # train and test
-CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
 --experiment_name=capsule_201_adam \
 --dataset=cifar10 \
 --model_cifar=capsule \
@@ -12,9 +12,9 @@ CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
 --schedule_cifar 150 225 \
 --optim=adam \
 --lr=0.0001 \
---route_num=4 \
+--route_num=2 \
 --multi_crop_test \
---deploy
+--port=2000
 
 end=`date +%s`
 runtime=$((end-start))
