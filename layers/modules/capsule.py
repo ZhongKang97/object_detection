@@ -56,13 +56,27 @@ class CapsNet(nn.Module):
             self.basic_cap = CapLayer2(64, 64, 8, 8, route_num=opts.route_num)
             self.cls_cap = CapLayer2(64, 64, 8, 10, as_final_output=True, route_num=opts.route_num)
 
+            # increase the spatial size x2 and channel number x1/2 (TOO SLOW)
+            cap_dim = 128
+            # self.buffer2 = nn.Sequential(*[
+            #     nn.ConvTranspose2d(64, cap_dim, stride=2, kernel_size=1, output_padding=1),
+            #     nn.ReLU(True)
+            # ])
+            self.buffer2 = nn.Sequential(*[
+                nn.Conv2d(64, cap_dim, kernel_size=3, padding=1),
+                nn.ReLU(True)
+            ])
             self.cap_smaller_in_share = CapLayer2(
-                64, 64, 8, 8, shared_size=4, route_num=opts.route_num)
-            self.cls_smaller_in_share = CapLayer2(
-                64, 64, 8, 10, shared_size=4, as_final_output=True, route_num=opts.route_num)
+                cap_dim, cap_dim, 8, 8, shared_size=4,
+                route_num=opts.route_num)
 
             self.cap_smaller_in_out_share = CapLayer2(
-                64, 64, 8, 8, shared_size=4, shared_group=2, route_num=opts.route_num)
+                cap_dim, cap_dim, 8, 8, shared_size=4,
+                shared_group=2, route_num=opts.route_num)
+
+            self.cls_smaller_in_share = CapLayer2(
+                cap_dim, cap_dim, 8, 10, shared_size=2,
+                as_final_output=True, route_num=opts.route_num)
 
         # init the network
         for m in self.modules():
@@ -108,14 +122,16 @@ class CapsNet(nn.Module):
             for i in range(self.cap_N):
                 x = self.basic_cap(x)
             x = self.cls_cap(x)
+
         elif self.cap_model == 'v2':
-            x = self.buffer(x)
+            x = self.buffer2(x)
             x = self._do_squash(x)
             for i in range(self.cap_N):
                 x = self.cap_smaller_in_share(x)
             x = self.cls_smaller_in_share(x)
+
         elif self.cap_model == 'v3':
-            x = self.buffer(x)
+            x = self.buffer2(x)
             x = self._do_squash(x)
             for i in range(self.cap_N):
                 x = self.cap_smaller_in_out_share(x)
