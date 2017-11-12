@@ -227,7 +227,26 @@ class CapsNet(nn.Module):
                 x += residual
                 x = self._do_squash(x)
             x = self.cls_smaller_in_share(x)
+        elif self.cap_model == 'v5_1':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual, x1, x2 = x, x, x
+                x1 = self.cap_smaller_in_share(x1)
+                x2 = self.cap_smaller_in_out_share(x2)
+                x = residual + x1 + x2
+            x = self.cls_smaller_in_share(x)
 
+        elif self.cap_model == 'v5_2':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual, x1, x2 = x, x, x
+                x1 = self.cap_smaller_in_share(x1)
+                x2 = self.cap_smaller_in_out_share(x2)
+                x = residual + x1 + x2
+                x = self._do_squash(x)
+            x = self.cls_smaller_in_share(x)
         else:
             raise NameError('Unknown structure or capsule model type.')
         return x, stats
