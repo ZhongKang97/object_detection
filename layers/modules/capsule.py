@@ -78,6 +78,13 @@ class CapsNet(nn.Module):
                 cap_dim, cap_dim, 8, 10, shared_size=2,
                 as_final_output=True, route_num=opts.route_num)
 
+            # misc utilites and toys
+            self.dropout = nn.Dropout2d(p=0.1)
+            self.bummer = nn.Sequential(*[
+                nn.BatchNorm2d(128),
+                nn.ReLU(True)
+            ])
+
         # init the network
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
@@ -135,6 +142,46 @@ class CapsNet(nn.Module):
             x = self._do_squash(x)
             for i in range(self.cap_N):
                 x = self.cap_smaller_in_out_share(x)
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_1':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                x = self.cap_smaller_in_share(x)
+                x += residual
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_2':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                x = self.cap_smaller_in_share(x)
+                x += residual
+                x = self._do_squash(x)
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_3':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                x = self.cap_smaller_in_share(x)
+                x = self.dropout(x)
+                x += residual
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_4':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                x = self.cap_smaller_in_share(x)
+                x = self.dropout(x)
+                x += residual
+                x = self._do_squash(x)
             x = self.cls_smaller_in_share(x)
         else:
             raise NameError('Unknown structure or capsule model type.')
