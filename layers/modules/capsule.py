@@ -183,6 +183,51 @@ class CapsNet(nn.Module):
                 x += residual
                 x = self._do_squash(x)
             x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_5':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                residual = self.dropout(residual)
+                x = self.cap_smaller_in_share(x)
+                x += residual
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_6':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                residual = self.dropout(residual)
+                x = self.cap_smaller_in_share(x)
+                x += residual
+                x = self._do_squash(x)
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_7':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                residual = self.dropout(residual)
+                x = self.cap_smaller_in_share(x)
+                x = self.dropout(x)
+                x += residual
+            x = self.cls_smaller_in_share(x)
+
+        elif self.cap_model == 'v4_8':
+            x = self.buffer2(x)
+            x = self._do_squash(x)
+            for i in range(self.cap_N):
+                residual = x
+                residual = self.dropout(residual)
+                x = self.cap_smaller_in_share(x)
+                x = self.dropout(x)
+                x += residual
+                x = self._do_squash(x)
+            x = self.cls_smaller_in_share(x)
+
         else:
             raise NameError('Unknown structure or capsule model type.')
         return x, stats
