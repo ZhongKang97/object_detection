@@ -15,7 +15,7 @@ CUDA_VISIBLE_DEVICES=2 python holly_cifar.py \
 --lr=0.0001 \
 --route_num=2 \
 --multi_crop_test \
---deploy
+--port=2000
 
 end=`date +%s`
 runtime=$((end-start))
