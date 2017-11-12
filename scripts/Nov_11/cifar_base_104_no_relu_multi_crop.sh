@@ -4,7 +4,7 @@ start=`date +%s`
 
 # train and test
 # '--test_batch=32' has to be small on cifar100
-CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
 --experiment_name=cifar_base_104_no_relu_multi_crop_cifar100 \
 --dataset=cifar100 \
 --model_cifar=capsule \
@@ -16,6 +16,7 @@ CUDA_VISIBLE_DEVICES=6 python holly_cifar.py \
 --test_batch=32 \
 --w_version=v2 \
 --multi_crop_test \
+--port=3000 \
 --deploy
 
 end=`date +%s`
