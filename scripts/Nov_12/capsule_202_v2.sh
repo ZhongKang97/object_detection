@@ -12,7 +12,7 @@ CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
 --epochs=300 \
 --schedule_cifar 150 225 \
 --optim=rmsprop \
---lr=0.001 \
+--lr=0.0001 \
 --route_num=2 \
 --multi_crop_test \
 --port=2000

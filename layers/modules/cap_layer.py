@@ -407,10 +407,10 @@ class CapLayer2(nn.Module):
 
         if self.shared_group != 1:
             raw_pred = pred
-            pred = raw_pred + self.learnable_b[0].expand_as(raw_pred)
+            pred = raw_pred + self.learnable_b[0]
             for ind in range(1, self.shared_group):
-                pred = torch.cat((pred, raw_pred + self.learnable_b[ind].expand_as(raw_pred)), dim=1)
-        assert pred.size(1) == self.num_out_caps
+                pred = torch.cat((pred, raw_pred + self.learnable_b[ind]), dim=1)
+        # assert pred.size(1) == self.num_out_caps
         pred = pred.permute(0, 3, 1, 2)
         # pred_i_j_d2
         # print('cap W time: {:.4f}'.format(time.time() - start))
