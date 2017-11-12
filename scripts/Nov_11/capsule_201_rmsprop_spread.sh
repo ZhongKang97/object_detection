@@ -4,16 +4,16 @@ start=`date +%s`
 
 # train and test
 CUDA_VISIBLE_DEVICES=7 python holly_cifar.py \
---experiment_name=capsule_201_adam_N_3 \
+--experiment_name=capsule_201_rmsprop_spread \
 --dataset=cifar10 \
 --model_cifar=capsule \
 --cap_model=v1 \
---cap_N=3 \
+--cap_N=1 \
 --epochs=300 \
 --schedule_cifar 150 225 \
---optim=adam \
+--optim=rmsprop \
 --lr=0.0001 \
---route_num=4 \
+--route_num=2 \
 --multi_crop_test \
 --deploy
 
