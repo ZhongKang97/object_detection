@@ -84,9 +84,9 @@ args.start_epoch = 1
 args.max_epoch = args.epochs if hasattr(args, 'epochs') else args.max_iter
 
 args.debug = not args.deploy
-if args.deploy:
-    # when in deploy mode, we will use port_id = 2000 as default on server
-    args.port = 2000
+# if args.deploy:
+#     # when in deploy mode, we will use port_id = 2000 as default on server
+#     args.port = 2000
 args.phase = 'train'
 args.save_folder = os.path.join('result', args.experiment_name, args.phase)
 
