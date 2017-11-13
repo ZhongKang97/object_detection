@@ -30,7 +30,11 @@ def squash(vec, manner='paper'):
         coeff = norm_squared / (1 + norm_squared)
         coeff2 = torch.unsqueeze((coeff/norm), dim=2)
     elif manner == 'sigmoid':
-        mean = (norm.max() - norm.min()) / 2
+        try:
+            mean = (norm.max() - norm.min()) / 2.0
+        except RuntimeError:
+            print(vec)
+            print(norm)
         coeff = norm - mean   # in-place bug
         coeff2 = torch.unsqueeze(F.sigmoid(coeff), dim=2)
     # coeff2: 128 x 10 x 1
