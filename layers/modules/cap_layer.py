@@ -35,8 +35,8 @@ def squash(vec, manner='paper'):
         except RuntimeError:
             print(vec)
             print(norm)
-        coeff = norm - mean   # in-place bug
-        coeff2 = torch.unsqueeze(F.sigmoid(coeff), dim=2)
+        coeff = F.sigmoid(norm - mean)   # in-place bug
+        coeff2 = torch.unsqueeze((coeff/norm), dim=2)
     # coeff2: 128 x 10 x 1
     return torch.mul(vec, coeff2)
 
