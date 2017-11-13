@@ -11,7 +11,7 @@ CUDA_VISIBLE_DEVICES=7 python holly_cifar.py \
 --cap_model=v0 \
 --epochs=300 \
 --schedule_cifar 150 225 \
---lr=0.01 \
+--lr=0.0001 \
 --optim=sgd \
 --route_num=2 \
 --w_version=v2 \
