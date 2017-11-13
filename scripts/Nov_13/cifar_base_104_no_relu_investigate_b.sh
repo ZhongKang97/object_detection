@@ -4,7 +4,7 @@ start=`date +%s`
 
 # train and test
 # '--test_batch=32' has to be small on cifar100
-CUDA_VISIBLE_DEVICES=0 python holly_cifar.py \
+CUDA_VISIBLE_DEVICES=1 python holly_cifar.py \
 --experiment_name=cifar_base_104_no_relu_investigate_b_learn \
 --dataset=cifar10 \
 --model_cifar=capsule \
