@@ -166,6 +166,8 @@ class CapLayer(nn.Module):
             self.b = Variable(torch.rand(num_out_caps, num_in_caps), requires_grad=False)
         elif opts.b_init == 'zero':
             self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=False)
+        elif opts.b_init == 'learn':
+            self.b = Variable(torch.zeros(num_out_caps, num_in_caps), requires_grad=True)
         if self.add_cap_droput:
             self.cap_droput = nn.Dropout2d(p=opts.dropout_p)
 
