@@ -21,13 +21,18 @@ def softmax_dim(input, axis=1):
     return soft_max_nd.transpose(axis, len(input_size)-1)
 
 
-def squash(vec):
+def squash(vec, manner='paper'):
     assert len(vec.size()) == 3
     # vec: 128 x 10 x 16
     norm = vec.norm(dim=2)
-    norm_squared = norm ** 2
-    coeff = norm_squared / (1 + norm_squared)
-    coeff2 = torch.unsqueeze((coeff/norm), dim=2)
+    if manner == 'paper':
+        norm_squared = norm ** 2
+        coeff = norm_squared / (1 + norm_squared)
+        coeff2 = torch.unsqueeze((coeff/norm), dim=2)
+    elif manner == 'sigmoid':
+        mean = (norm.max() - norm.min()) / 2
+        coeff = norm - mean   # in-place bug
+        coeff2 = torch.unsqueeze(F.sigmoid(coeff), dim=2)
     # coeff2: 128 x 10 x 1
     return torch.mul(vec, coeff2)
 
@@ -140,6 +145,7 @@ class CapLayer(nn.Module):
         self.use_KL = opts.use_KL
         self.KL_manner = opts.KL_manner
         self.add_cap_droput = opts.add_cap_dropout
+        self.squash_manner = opts.squash_manner
 
         if opts.w_version == 'v0':
             # DEPRECATED
@@ -232,7 +238,8 @@ class CapLayer(nn.Module):
                 temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
                          for zz in range(self.num_out_caps)]
                 s = torch.stack(temp_, dim=1)
-                v = squash(s)                           # 128 x 10 x 16
+                # TODO: this is the only place to add the argument
+                v = squash(s, self.squash_manner)       # 128 x 10 x 16
                 temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
                          for zz in range(self.num_out_caps)]
                 delta_b = torch.stack(temp_, dim=1).detach()
@@ -316,7 +323,7 @@ class CapLayer(nn.Module):
                 temp_ = [torch.matmul(c[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].squeeze()).squeeze()
                          for zz in range(self.num_out_caps)]
                 s = torch.stack(temp_, dim=1)
-                v = squash(s)                           # 128 x 10 x 16
+                v = squash(s, self.squash_manner)       # 128 x 10 x 16
                 temp_ = [torch.matmul(v[:, zz, :].unsqueeze(dim=1), pred[:, :, zz, :].permute(0, 2, 1)).squeeze()
                          for zz in range(self.num_out_caps)]
                 delta_b = torch.stack(temp_, dim=1).detach()
