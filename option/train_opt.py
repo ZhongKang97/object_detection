@@ -4,7 +4,7 @@ from utils.util import *
 
 parser = argparse.ArgumentParser(description='Convolution Capsule Network')
 parser.add_argument('--experiment_name', default='capsule_debug_local')
-parser.add_argument('--dataset', default='fmnist',
+parser.add_argument('--dataset', default='cifar10',
                     help='[ voc | coco | cifar10 | cifar100 | svhn | fmnist ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
@@ -42,7 +42,7 @@ parser.add_argument('--test_only', action='store_true')
 parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
 # network, v0 is the structure in the paper
-parser.add_argument('--cap_model', default='v5_1', type=str,
+parser.add_argument('--cap_model', default='v0', type=str,
                     help='only valid when model_cifar is [capsule], v0, v1, v2, v3')
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 # loss
@@ -60,6 +60,7 @@ parser.add_argument('--has_relu_in_W', action='store_true')
 parser.add_argument('--do_squash', action='store_true', help='for w_v3 alone')  # squash is much better
 parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3]')
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand | learn]')
+parser.add_argument('--squash_manner', default='sigmoid', type=str)
 # general for all cap_model
 parser.add_argument('--route_num', default=2, type=int)
 parser.add_argument('--epochs', default=300, type=int)
