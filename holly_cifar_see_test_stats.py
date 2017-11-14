@@ -12,12 +12,14 @@ from utils.util import *
 from option.train_opt import args   # for cifar we also has test here
 
 # ==============================
-args.experiment_name = 'cifar_base_104_KL_new'
+# args.experiment_name = 'cifar_base_104_KL_new'
+args.experiment_name = 'cifar_base_104_no_relu_multi_crop'
 args.cap_model = 'v0'
 args.non_target_j = True
 args.see_all_sample = True
 args.which_batch_idx = 67
-test_model_list = [1, 20, 80, 200, 280]
+# test_model_list = [1, 20, 80, 200, 280]
+test_model_list = [1, 20, 80, 200, 300]
 # only makes sense when 'see_all_sample' is false
 args.port = 2000
 # ==============================
