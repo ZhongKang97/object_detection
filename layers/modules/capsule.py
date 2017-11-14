@@ -139,15 +139,19 @@ class CapsNet(nn.Module):
             x = self.buffer2(x)
             x = self._do_squash(x)
             for i in range(self.cap_N):
-                x, _ = self.cap_smaller_in_share(x)
+                x, curr_stats = self.cap_smaller_in_share(x)
+                multi_cap_stats.append(curr_stats)
             x, stats = self.cls_smaller_in_share(x)
+            multi_cap_stats.append(stats)
 
         elif self.cap_model == 'v3':
             x = self.buffer2(x)
             x = self._do_squash(x)
             for i in range(self.cap_N):
-                x, _ = self.cap_smaller_in_out_share(x)
+                x, curr_stats = self.cap_smaller_in_out_share(x)
+                multi_cap_stats.append(curr_stats)
             x, stats = self.cls_smaller_in_share(x)
+            multi_cap_stats.append(stats)
 
         elif self.cap_model == 'v4_1':
             x = self.buffer2(x)

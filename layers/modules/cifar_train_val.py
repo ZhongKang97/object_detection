@@ -213,7 +213,8 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
 
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
-        inputs, targets = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets)
+        inputs, targets = torch.autograd.Variable(inputs, volatile=True), \
+                          torch.autograd.Variable(targets)
 
         # SHOW histogram here
         if opt.draw_hist:

@@ -37,14 +37,11 @@ parser.add_argument('--beta1', type=float, default=0.9, help='momentum term of a
 # elif args_temp.dataset == 'cifar':
 # for cifar only
 parser.add_argument('--model_cifar', default='capsule', type=str, help='resnet | capsule')
-parser.add_argument('--draw_hist', action='store_true')
-parser.add_argument('--test_only', action='store_true')
-parser.add_argument('--non_target_j', action='store_true')
 parser.add_argument('--multi_crop_test', action='store_true')
 # network, v0 is the structure in the paper
 parser.add_argument('--cap_model', default='v4_1', type=str,
                     help='only valid when model_cifar is [capsule], v0, v1, v2, v3')
-parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
+parser.add_argument('--cap_N', default=3, type=int)
 # loss
 parser.add_argument('--use_KL', action='store_true')
 parser.add_argument('--use_multiple', action='store_true', help='valid for N > 1')
@@ -63,13 +60,17 @@ parser.add_argument('--w_version', default='v2', type=str, help='[v0, v1, v2, v3
 parser.add_argument('--b_init', default='zero', type=str, help='[zero | rand | learn]')
 parser.add_argument('--squash_manner', default='sigmoid', type=str)
 # general for all cap_model
-parser.add_argument('--route_num', default=2, type=int)
+parser.add_argument('--route_num', default=4, type=int)
 parser.add_argument('--epochs', default=300, type=int)
 parser.add_argument('--schedule_cifar', type=int, nargs='+', default=[150, 225],
                     help='Decrease learning rate at these epochs.')
 parser.add_argument('--train_batch', default=128, type=int, metavar='N')
 parser.add_argument('--test_batch', default=128, type=int, metavar='N')
 parser.add_argument('--save_epoch', default=20, type=int)
+# keep the following for legacy purpose
+parser.add_argument('--draw_hist', action='store_true')
+parser.add_argument('--test_only', action='store_true')
+parser.add_argument('--non_target_j', action='store_true')
 
 # RUNTIME AND DISPLAY
 parser.add_argument('--manual_seed', default=-1, type=int)

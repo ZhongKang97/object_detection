@@ -60,17 +60,13 @@ if args.use_cuda:
 cudnn.benchmark = True
 
 if args.test_only:
-    # args.non_target_j = True  # added in the opt.py
     test_model_list = [1, 20, 80, 200, 300]
-    # test_model_list = [300]
+
     for _, i in enumerate(test_model_list):
         model_file = \
             os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
-        # model_file = os.path.join('result', args.experiment_name, 'model_best.pth')
-        # TO: only on local MacBook
         print('loading weights of model [{:s}]'.format(os.path.basename(model_file)))
         model = load_weights(model_file, model)
-
         args.cifar_model = model_file
         info = test(test_loader, model, criterion, args, vis)
         print('test acc is {:.4f}'.format(info['test_acc']))
