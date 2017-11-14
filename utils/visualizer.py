@@ -9,7 +9,7 @@ class Visualizer(object):
         if self.opt.visdom:
             import visdom
             if opt.draw_hist:
-                target_suffix = 'non_target' if opt.non_target_j is True else 'target'
+                target_suffix = 'target' if opt.non_target_j is True else 'non_target'
                 data_scale = 'all_data' if opt.see_all_sample is True else 'part_data'
                 name = opt.experiment_name + '_draw_hist' \
                        + '_' + target_suffix + '_' + data_scale
