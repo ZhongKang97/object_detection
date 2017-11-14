@@ -101,10 +101,9 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
             # 4.1. avg_len
             x_list = np.floor(cos_v * 10 + 10)   # 1152
             y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
-            print(pred)
-            print(y_list)
-            print(x_list)
-            print(avg_len)
+            print(cos_v)
+            print(pred_mat_norm)
+            print(v_norm)
             avg_len = _update(x_list, y_list, avg_len)
 
         # # 4.2
