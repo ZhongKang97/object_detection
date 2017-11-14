@@ -48,6 +48,7 @@ def _update(x, y, a):
 
 
 def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
+    eps = 1e-12
     batch_cos_dist = []
     batch_i_length = []
     batch_cos_v = []
@@ -76,7 +77,7 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
         for i in range(bs):
             samplet_gt = (target[i].data[0]+1) % 10 if non_target_j else target[i].data[0]
             pred_mat_norm = pred[i, :, samplet_gt, :].squeeze() / \
-                       pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1)   # 1152 x 16
+                            (pred[i, :, samplet_gt, :].squeeze().norm(dim=1).unsqueeze(dim=1) + eps)   # 1152 x 16
 
             # # 1. cos_distance, i - i
             # cosine_dist = torch.matmul(pred_mat_norm, pred_mat_norm.t()).data
@@ -92,7 +93,7 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
             batch_i_length.extend(i_length)
 
             # 3. cos_dist, i - j
-            v_norm = v[i, samplet_gt, :] / v[i, samplet_gt, :].norm()
+            v_norm = v[i, samplet_gt, :] / (v[i, samplet_gt, :].norm() + eps)
             v_norm = v_norm.unsqueeze(dim=1)  # 16 x 1
             cos_v = torch.matmul(pred_mat_norm, v_norm).squeeze().data
             cos_v = cos_v.cpu().numpy()
@@ -101,9 +102,6 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
             # 4.1. avg_len
             x_list = np.floor(cos_v * 10 + 10)   # 1152
             y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
-            print(cos_v)
-            print(pred_mat_norm)
-            print(v_norm)
             avg_len = _update(x_list, y_list, avg_len)
 
         # # 4.2
