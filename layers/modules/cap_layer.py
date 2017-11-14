@@ -187,7 +187,7 @@ class CapLayer(nn.Module):
         batch_i_length = []
         batch_cos_v = []
         avg_len = []
-        mean, std = [], []
+        mean, std = [], []   # for KL loss
         bs, in_channels, h, w = input.size()
         # expand b_ji along batch dim
         b = self.b.expand(bs, self.b.size(0), self.b.size(1))
@@ -374,7 +374,7 @@ class CapLayer2(nn.Module):
         Propagation coefficients (b or c): bs_j_i
     """
     def __init__(self,
-                 in_dim, out_dim, spatial_size_1, spatial_size_2,
+                 opts, in_dim, out_dim, spatial_size_1, spatial_size_2,
                  route_num, as_final_output=False,
                  shared_size=-1, shared_group=1):
         super(CapLayer2, self).__init__()
@@ -383,6 +383,8 @@ class CapLayer2(nn.Module):
             self.num_out_caps = spatial_size_2
         else:
             self.num_out_caps = int(spatial_size_2 ** 2)
+        self.use_KL = opts.use_KL
+        self.KL_manner = opts.KL_manner
         self.in_dim = in_dim
         self.out_dim = out_dim
         self.route_num = route_num
@@ -404,6 +406,7 @@ class CapLayer2(nn.Module):
         self.W = nn.Conv2d(IN, OUT, groups=self.num_conv_groups, kernel_size=1, stride=1)
 
     def forward(self, x):
+        mean, std = [], []   # for KL loss
         bs = x.size(0)
         # generate random b on-the-fly
         b = Variable(torch.rand(bs, self.num_out_caps, self.num_in_caps), requires_grad=False)
@@ -445,11 +448,14 @@ class CapLayer2(nn.Module):
         # routing ends
         # v: bs, num_out_caps, out_dim
 
+        if self.use_KL:
+            mean, std = compute_stats([], pred, v, KL_manner=self.KL_manner)
+
         if not self.as_final_output:
             # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16
             spatial_out = int(math.sqrt(self.num_out_caps))
             v = v.permute(0, 2, 1).resize(bs, self.out_dim, spatial_out, spatial_out)
-        return v
+        return v, [mean, std]
 
 
 class MarginLoss(nn.Module):

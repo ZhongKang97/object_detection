@@ -121,7 +121,6 @@ def train(trainloader, model, criterion, optimizer, opt, vis, epoch):
         inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
-        # TODO: no stats ouput during training;
         # update: last two entries have mean, std for KL loss
         outputs, stats = model(inputs, targets)  # 128 x 10 x 16
         if structure == 'capsule':
