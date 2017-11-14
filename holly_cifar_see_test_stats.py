@@ -12,19 +12,20 @@ from utils.util import *
 from option.train_opt import args   # for cifar we also has test here
 
 # ==============================
-# args.experiment_name = 'cifar_base_104_no_relu'
-args.show_freq = 5
+args.experiment_name = 'cifar_base_104_no_relu_multi_crop'
 args.cap_model = 'v0'
-args.draw_hist = True
-args.test_only = True
 args.non_target_j = False
-args.see_all_sample = True
+args.see_all_sample = False
 args.which_batch_idx = 0
 # only makes sense when 'see_all_sample' is false
-args.port = 2000
+args.port = 4000
 # ==============================
+args.show_freq = 5
+args.draw_hist = True
+args.test_only = True
+args.save_folder = os.path.join('result', args.experiment_name, args.phase)
 if args.see_all_sample:
-    args.which_sample_index = -1
+    args.which_batch_idx = -1
 args = show_jot_opt(args)
 vis = Visualizer(args)
 
