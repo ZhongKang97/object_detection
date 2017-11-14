@@ -108,7 +108,7 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
         # for i in range(21):
         #     avg_value = 0. if avg_len[i] == [] else np.mean(avg_len[i])
         #     avg_len_new.append(avg_value)
-    if target != []:
+    if target is not None:
         return batch_cos_dist, batch_i_length, batch_cos_v, \
                 {'X': list(range(21)), 'Y': avg_len}
     else:
@@ -259,7 +259,7 @@ class CapLayer(nn.Module):
                 batch_cos_dist, batch_i_length, batch_cos_v, avg_len = \
                     compute_stats(target, pred, v, self.non_target_j)
             if self.use_KL:
-                mean, std = compute_stats([], pred, v, KL_manner=self.KL_manner)
+                mean, std = compute_stats(None, pred, v, KL_manner=self.KL_manner)
 
             if self.FIND_DIFF:
                 temp = np.asarray(pred_list)
@@ -449,7 +449,7 @@ class CapLayer2(nn.Module):
         # v: bs, num_out_caps, out_dim
 
         if self.use_KL:
-            mean, std = compute_stats([], pred, v, KL_manner=self.KL_manner)
+            mean, std = compute_stats(None, pred, v, KL_manner=self.KL_manner)
 
         if not self.as_final_output:
             # v: eg., 64, 256(16x16), 20 -> 64, 20, 16, 16

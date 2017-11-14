@@ -3,7 +3,7 @@ import random
 from utils.util import *
 
 parser = argparse.ArgumentParser(description='Convolution Capsule Network')
-parser.add_argument('--experiment_name', default='capsule_debug_local')
+parser.add_argument('--experiment_name', default='cifar_base_104_no_relu')
 parser.add_argument('--dataset', default='cifar10',
                     help='[ voc | coco | cifar10 | cifar100 | svhn | fmnist ]')
 parser.add_argument('--deploy', action='store_true')

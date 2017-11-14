@@ -8,7 +8,11 @@ class Visualizer(object):
         self.opt = opt
         if self.opt.visdom:
             import visdom
-            self.vis = visdom.Visdom(port=opt.port, env=opt.experiment_name)
+            if opt.draw_hist:
+                name = opt.experiment_name + '_draw_hist'
+            else:
+                name = opt.experiment_name
+            self.vis = visdom.Visdom(port=opt.port, env=name)
             # lines 100, text 200, images/hist 300
             self.display_win_id = 100
             self.dis_win_id_im = 300
@@ -120,10 +124,11 @@ class Visualizer(object):
             )
 
     def plot_hist(self, stats_data, info, all_sample=False):
-        title_suffix = 'batch_id={:d} Model: {:s}'.format(
+        target_suffix = 'target' if info['target'] is True else 'non_target'
+        title_suffix = 'batch_id={:d} Model: {:s}, {:s}'.format(
             info['curr_iter'],
-            info['model']) if all_sample \
-                              is False else 'Model: {:s}'.format(info['model'])
+            info['model'], target_suffix) \
+            if all_sample is False else 'Model: {:s}, {:s}'.format(info['model'], target_suffix)
         data1 = stats_data[0]
         data2 = stats_data[1]
         data3 = stats_data[2]
@@ -143,18 +148,18 @@ class Visualizer(object):
         #     )
         #     self.dis_win_id_im += 1
 
-        title_str = '| u_hat_i |, ' + title_suffix
-        self.vis.histogram(
-            data2,
-            win=self.dis_win_id_im,
-            opts={
-                'title': title_str,
-                'xlabel': 'bin',
-                'ylabel': 'percentage',
-                'numbins': 30
-            },
-        )
-        self.dis_win_id_im += 1
+        # title_str = '| u_hat_i |, ' + title_suffix
+        # self.vis.histogram(
+        #     data2,
+        #     win=self.dis_win_id_im,
+        #     opts={
+        #         'title': title_str,
+        #         'xlabel': 'bin',
+        #         'ylabel': 'percentage',
+        #         'numbins': 30
+        #     },
+        # )
+        # self.dis_win_id_im += 1
 
         title_str = 'CosDist: i - j, ' + title_suffix
         self.vis.histogram(
