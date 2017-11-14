@@ -103,6 +103,8 @@ def compute_stats(target, pred, v, non_target_j=False, KL_manner=-1):
             y_list = pred[i, :, samplet_gt, :].squeeze().norm(dim=1).data.cpu().numpy()   # 1152
             print(pred)
             print(y_list)
+            print(x_list)
+            print(avg_len)
             avg_len = _update(x_list, y_list, avg_len)
 
         # # 4.2
