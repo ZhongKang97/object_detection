@@ -48,9 +48,9 @@ def load_weights(model_path, model):
     print('test only mode, loading weights ...')
     checkpoints = torch.load(model_path)
     try:
-        print('best test accu is: {:.4f}\n'.format(checkpoints['best_test_acc']))
+        print('best test accu is: {:.4f}'.format(checkpoints['best_test_acc']))
     except KeyError:
-        print('best test accu is: {:.4f}\n'.format(checkpoints['best_acc']))
+        print('best test accu is: {:.4f}'.format(checkpoints['best_acc']))
     weights = checkpoints['state_dict']
     try:
         model.load_state_dict(weights)
