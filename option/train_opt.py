@@ -47,6 +47,7 @@ parser.add_argument('--cap_model', default='v4_1', type=str,
 parser.add_argument('--cap_N', default=3, type=int, help='for v5 only, parallel N CapLayers')
 # loss
 parser.add_argument('--use_KL', action='store_true')
+parser.add_argument('--use_multiple', action='store_true', help='valid for N > 1')
 parser.add_argument('--KL_manner', default=1, type=int)
 parser.add_argument('--KL_factor', default=.1, type=float)
 parser.add_argument('--use_CE_loss', action='store_true')

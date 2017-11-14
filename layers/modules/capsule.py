@@ -4,6 +4,7 @@ import torch.nn as nn
 from layers.from_wyang.models.cifar.resnet import BasicBlock, Bottleneck
 from layers.modules.cap_layer import CapLayer, CapLayer2, squash
 import time
+import torch
 
 
 class CapsNet(nn.Module):
@@ -46,6 +47,7 @@ class CapsNet(nn.Module):
             self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
                                       in_dim=8, out_dim=16, num_shared=32)
         else:
+            self.use_multiple = opts.use_multiple
             # different structures below
             ############ v1 ############
             self.buffer = nn.Sequential(*[
@@ -103,6 +105,7 @@ class CapsNet(nn.Module):
 
     def forward(self, x, target=None, curr_iter=0, vis=None):
         stats = []
+        multi_cap_stats = []
         # start = time.time()
         x = self.conv1(x)
         x = self.bn1(x)
@@ -151,9 +154,11 @@ class CapsNet(nn.Module):
             x = self._do_squash(x)
             for i in range(self.cap_N):
                 residual = x
-                x, _ = self.cap_smaller_in_share(x)
+                x, curr_stats = self.cap_smaller_in_share(x)
+                multi_cap_stats.append(curr_stats)
                 x += residual
             x, stats = self.cls_smaller_in_share(x)
+            multi_cap_stats.append(stats)
 
         elif self.cap_model == 'v4_2':
             x = self.buffer2(x)
@@ -234,10 +239,13 @@ class CapsNet(nn.Module):
             x = self._do_squash(x)
             for i in range(self.cap_N):
                 residual, x1, x2 = x, x, x
-                x1, _ = self.cap_smaller_in_share(x1)
-                x2, _ = self.cap_smaller_in_out_share(x2)
+                x1, curr_stats = self.cap_smaller_in_share(x1)
+                multi_cap_stats.append(curr_stats)
+                x2, curr_stats = self.cap_smaller_in_out_share(x2)
+                multi_cap_stats.append(curr_stats)
                 x = residual + x1 + x2
             x, stats = self.cls_smaller_in_share(x)
+            multi_cap_stats.append(stats)
 
         elif self.cap_model == 'v5_2':
             x = self.buffer2(x)
@@ -251,7 +259,17 @@ class CapsNet(nn.Module):
             x, stats = self.cls_smaller_in_share(x)
         else:
             raise NameError('Unknown structure or capsule model type.')
+
+        if self.use_multiple:
+            stats = self._sort_up_multi_stats(multi_cap_stats)
         return x, stats
+
+    def _sort_up_multi_stats(self, multi_cap_stats):
+        stats = [multi_cap_stats[0][j] for j in range(len(multi_cap_stats[0]))]
+        for i in range(1, len(multi_cap_stats)):
+            for j in range(len(multi_cap_stats[0])):
+                stats[j] = torch.cat((stats[j], multi_cap_stats[i][j]), dim=0)
+        return stats
 
     def _do_squash(self, x):
         # do squash along the channel dimension
