@@ -16,9 +16,9 @@ args.experiment_name = 'cifar_base_104_no_relu_multi_crop'
 args.cap_model = 'v0'
 args.non_target_j = False
 args.see_all_sample = False
-args.which_batch_idx = 0
+args.which_batch_idx = 2
 # only makes sense when 'see_all_sample' is false
-args.port = 4000
+args.port = 2000
 # ==============================
 args.show_freq = 5
 args.draw_hist = True
