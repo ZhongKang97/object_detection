@@ -250,7 +250,7 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
                     'd2_num': outputs.size(2),
                     'curr_iter': batch_idx,
                     'model': os.path.basename(opt.cifar_model),
-                    'target': opt.non_target_j
+                    'target': not opt.non_target_j
                 }
                 vis.plot_hist(stats, plot_info)
 
@@ -295,7 +295,7 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
                 np.mean(stats_all_data[3]['Y'][i])
         plot_info = {
             'model': os.path.basename(opt.cifar_model),
-            'target': opt.non_target_j
+            'target': not opt.non_target_j
         }
         vis.plot_hist(stats_all_data, plot_info, all_sample=True)
 
