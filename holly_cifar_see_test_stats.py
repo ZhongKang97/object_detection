@@ -18,9 +18,10 @@ args.draw_hist = True
 args.test_only = True
 args.non_target_j = False
 args.see_all_sample = True
-args.which_sample_index = 0
+args.which_sample_index = 67   # only makes sense when 'see_all_sample' is false
 # ==============================
-
+if args.see_all_sample:
+    args.which_sample_index = -1
 args = show_jot_opt(args)
 vis = Visualizer(args)
 
