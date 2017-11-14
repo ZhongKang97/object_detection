@@ -12,11 +12,12 @@ from utils.util import *
 from option.train_opt import args   # for cifar we also has test here
 
 # ==============================
-args.experiment_name = 'cifar_base_104_no_relu_multi_crop'
+args.experiment_name = 'cifar_base_104_KL_new'
 args.cap_model = 'v0'
 args.non_target_j = False
-args.see_all_sample = False
-args.which_batch_idx = 2
+args.see_all_sample = True
+args.which_batch_idx = 67
+test_model_list = [1, 20, 80, 200, 280]
 # only makes sense when 'see_all_sample' is false
 args.port = 2000
 # ==============================
@@ -50,7 +51,6 @@ if args.use_cuda:
 cudnn.benchmark = True
 
 
-test_model_list = [1, 20, 80, 200, 300]
 for _, i in enumerate(test_model_list):
     model_file = \
         os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
