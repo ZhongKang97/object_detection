@@ -12,13 +12,15 @@ from utils.util import *
 from option.train_opt import args   # for cifar we also has test here
 
 # ==============================
-args.experiment_name = ''
+# args.experiment_name = 'cifar_base_104_no_relu'
+args.show_freq = 5
 args.cap_model = 'v0'
 args.draw_hist = True
 args.test_only = True
 args.non_target_j = False
 args.see_all_sample = True
-args.which_sample_index = 67   # only makes sense when 'see_all_sample' is false
+args.which_batch_idx = 0
+# only makes sense when 'see_all_sample' is false
 # ==============================
 if args.see_all_sample:
     args.which_sample_index = -1
@@ -51,7 +53,10 @@ for _, i in enumerate(test_model_list):
     model_file = \
         os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(i))
     print('loading weights of model [{:s}]'.format(os.path.basename(model_file)))
-    model = load_weights(model_file, model)
+    try:
+        model = load_weights(model_file, model)
+    except AssertionError:
+        print('warning: you may run on cpu; model weights initialized instead of loading models')
     args.cifar_model = model_file
     info = test(test_loader, model, criterion, args, vis)
     print('test acc is {:.4f}'.format(info['test_acc']))
