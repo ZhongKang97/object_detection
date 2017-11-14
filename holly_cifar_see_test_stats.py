@@ -14,7 +14,7 @@ from option.train_opt import args   # for cifar we also has test here
 # ==============================
 args.experiment_name = 'cifar_base_104_KL_new'
 args.cap_model = 'v0'
-args.non_target_j = False
+args.non_target_j = True
 args.see_all_sample = True
 args.which_batch_idx = 67
 test_model_list = [1, 20, 80, 200, 280]
