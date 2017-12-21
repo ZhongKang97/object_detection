@@ -7,6 +7,7 @@ https://github.com/fmassa/vision/blob/voc_dataset/torchvision/datasets/voc.py
 
 import os
 import os.path
+from pycocotools.coco import COCO
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
@@ -217,7 +218,7 @@ class COCODetection(data.Dataset):
 
     def __init__(self, root, phase,
                  transform=None, dataset_name='COCO'):
-        from pycocotools.coco import COCO
+
         if phase == 'train':
             anno_file = 'instances_train2014.json'
             anno_file_2 = 'instances_valminusminival2014.json'
