@@ -32,6 +32,7 @@ class CapsNet(nn.Module):
             self.cap_model = 'v0'
         self.cap_N = opts.cap_N
         self.structure = opts.model_cifar   # capsule or resnet
+        self.use_multiple = opts.use_multiple
 
         channel_in = 256 if depth == 50 else 64
         self.tranfer_conv = nn.Conv2d(channel_in, 256, kernel_size=3)  # 256x8x8 -> 256x6x6
@@ -47,7 +48,6 @@ class CapsNet(nn.Module):
             self.cap_layer = CapLayer(opts, num_in_caps=32*6*6, num_out_caps=num_classes,
                                       in_dim=8, out_dim=16, num_shared=32)
         else:
-            self.use_multiple = opts.use_multiple
             # different structures below
             ############ v1 ############
             self.buffer = nn.Sequential(*[
