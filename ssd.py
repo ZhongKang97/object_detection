@@ -55,7 +55,7 @@ def build_ssd(opts, num_classes):
             print(model)
         else:
             print('Network structure not shown in deploy mode')
-        if opts.cuda:
+        if opts.use_cuda:
             if ~opts.debug:
                 model = torch.nn.DataParallel(model).cuda()
             else:

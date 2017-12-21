@@ -1,6 +1,12 @@
-# SSD: Single Shot MultiBox Object Detector, in PyTorch
-A [PyTorch](http://pytorch.org/) implementation of [Single Shot MultiBox Detector](http://arxiv.org/abs/1512.02325) from the 2016 paper by Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang, and Alexander C. Berg.  The official and original Caffe code can be found [here](https://github.com/weiliu89/caffe/tree/ssd).  
+# SSD: Single Shot MultiBox Object Detector
+A [PyTorch](http://pytorch.org/) implementation of [Single Shot MultiBox Detector](http://arxiv.org/abs/1512.02325)
+from the 2016 paper by Wei Liu, Dragomir Anguelov, Dumitru Erhan, Christian Szegedy, Scott Reed, Cheng-Yang,
+and Alexander C. Berg.
 
+The official and original Caffe code can be found [here](https://github.com/weiliu89/caffe/tree/ssd).
+
+This is a forked version of the repo [here](https://github.com/amdegroot/ssd.pytorch).
+Many thanks to the original author [@Max](https://github.com/amdegroot)!
 
 <img align="right" src= "https://github.com/amdegroot/ssd.pytorch/blob/master/doc/ssd.png" height = 400/>
 
@@ -12,7 +18,7 @@ A [PyTorch](http://pytorch.org/) implementation of [Single Shot MultiBox Detecto
 - <a href='#performance'>Performance</a>
 - <a href='#demos'>Demos</a>
 - <a href='#todo'>Future Work</a>
-- <a href='#references'>Reference</a>
+- <a href='#references'>References</a>
 
 &nbsp;
 &nbsp;
@@ -20,115 +26,72 @@ A [PyTorch](http://pytorch.org/) implementation of [Single Shot MultiBox Detecto
 &nbsp;
 
 ## Installation
-- Install [PyTorch](http://pytorch.org/) by selecting your environment on the website and running the appropriate command.
-- Clone this repository.
-  * Note: We currently only support Python 3+.
-- Then download the dataset by following the [instructions](#download-voc2007-trainval--test) below.
-- We now support [Visdom](https://github.com/facebookresearch/visdom) for real-time loss visualization during training! 
-  * To use Visdom in the browser: 
-  ```Shell
-  # First install Python server and client 
-  pip install visdom
-  # Start the server (probably in a screen or tmux)
-  python -m visdom.server
-  ```
-  * Then (during training) navigate to http://localhost:8097/ (see the Train section below for training details).
-- Note: For training, we currently only support [VOC](http://host.robots.ox.ac.uk/pascal/VOC/), but are adding [COCO](http://mscoco.org/) and hopefully [ImageNet](http://www.image-net.org/) soon.
-- UPDATE: We have switched from PIL Image support to cv2. The plan is to create a branch that uses PIL as well.  
+- Install [PyTorch](http://pytorch.org/), clone this repository, etc.
+- Please follow the instructions in the [original](https://github.com/hli2020/object_detection#installation) forked version.
+- We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process.
+There is a tutorial on how to use it.
 
 ## Datasets
-To make things easy, we provide a simple VOC dataset loader that enherits `torch.utils.data.Dataset` making it fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).
+To make things easy, we provide a simple dataset loader that enherits `torch.utils.data.Dataset`
+making it fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).
 
 ### VOC Dataset
-##### Download VOC2007 trainval & test
+##### Download VOC 2007 trainval & test and 2012 trainval
 
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2007.sh # <directory>
-```
-
-##### Download VOC2012 trainval
-
-```Shell
-# specify a directory for dataset to be downloaded into, else default is ~/data/
 sh data/scripts/VOC2012.sh # <directory>
 ```
 
+### COCO
+
 ## Training SSD
-- First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-- By default, we assume you have downloaded the file in the `ssd.pytorch/weights` dir:
+- First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:
+https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+- By default, we assume you have downloaded the file in the `data/pretrain` dir:
 
 ```Shell
-mkdir weights
-cd weights
+mkdir data/pretrain
+cd data/pretrain
 wget https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 ```
 
-- To train SSD using the train script simply specify the parameters listed in `train.py` as a flag or manually change them.
+- To train SSD using the train script,
+simply specify the parameters listed in `option/train_opt.py`.
 
 ```Shell
 python train.py
 ```
 
+<!---
 - Note:
   * For training, an NVIDIA GPU is strongly recommended for speed.
   * Currently we only support training on v2 (the newest version).
   * For instructions on Visdom usage/installation, see the <a href='#installation'>Installation</a> section.
   * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train.py` for options)
-  
-## Evaluation
+-->
+
+## Evaluation/Test
 To evaluate a trained network:
 
 ```Shell
-python eval.py
+python test.py
 ```
+You can specify the parameters listed in the `option/test_opt.py` file by flagging them or manually changing them.
 
-You can specify the parameters listed in the `eval.py` file by flagging them or manually changing them.  
 
-
-<img align="left" src= "https://github.com/amdegroot/ssd.pytorch/blob/master/doc/detection_examples.png">
 
 ## Performance
 
-#### VOC2007 Test
+### VOC2007 Test
 
-##### mAP
+#### mAP
 
-| Original | Converted weiliu89 weights | From scratch w/o data aug | From scratch w/ data aug |
-|:-:|:-:|:-:|:-:|
-| 77.2 % | 77.26 % | 58.12% | 77.43 % |
-
-##### Evaluation report for the current version
-
-VOC07 metric? Yes
-
-AP for aeroplane = 0.8172<br />
-AP for bicycle = 0.8544<br />
-AP for bird = 0.7571<br />
-AP for boat = 0.6958<br />
-AP for bottle = 0.4990<br />
-AP for bus = 0.8488<br />
-AP for car = 0.8577<br />
-AP for cat = 0.8737<br />
-AP for chair = 0.6147<br />
-AP for cow = 0.8233<br />
-AP for diningtable = 0.7917<br />
-AP for dog = 0.8559<br />
-AP for horse = 0.8709<br />
-AP for motorbike = 0.8474<br />
-AP for person = 0.7889<br />
-AP for pottedplant = 0.4996<br />
-AP for sheep = 0.7742<br />
-AP for sofa = 0.7913<br />
-AP for train = 0.8616<br />
-AP for tvmonitor = 0.7631<br />
-Mean AP = 0.7743<br />
-
-
-##### FPS
+#### FPS
 **GTX 1060:** ~45.45 FPS 
 
-## Demos
+## Demo (Grab and Go)
 
 ### Use a pre-trained SSD network for detection
 
