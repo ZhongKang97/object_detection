@@ -39,7 +39,7 @@ data_loader = data.DataLoader(dataset, args.batch_size, num_workers=args.num_wor
 ssd_net, start_iter = build_ssd(args, dataset.num_classes)
 optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
-criterion = MultiBoxLoss(dataset.num_classes, 0.5, True, 0, True, 3, 0.5, False, args.cuda)
+criterion = MultiBoxLoss(dataset.num_classes, 0.5, True, 0, True, 3, 0.5, False, args.use_cuda)
 
 epoch_size = len(dataset) // args.batch_size
 batch_iterator = None
@@ -74,7 +74,7 @@ for iteration in range(start_iter, args.max_iter+1):
     # load train data
     images, targets = next(batch_iterator)
 
-    if args.cuda:
+    if args.use_cuda:
         images = Variable(images.cuda())
         targets = [Variable(anno.cuda(), volatile=True) for anno in targets]
     else:
