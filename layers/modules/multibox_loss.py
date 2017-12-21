@@ -62,7 +62,7 @@ class MultiBoxLoss(nn.Module):
             assert loc_data.size(1) == priors.size(0), 'loc data vs prior SIZE MISMATCH'
 
         num = loc_data.size(0)
-        priors = priors[:loc_data.size(1), :]   # TODO: I guess it is the multi-gpu thing
+        priors = priors[:loc_data.size(1), :]   # it is the multi-gpu thing
         num_priors = (priors.size(0))
 
         # match priors (default boxes) and ground truth boxes

@@ -16,6 +16,7 @@ if sys.version_info[0] == 2:
 else:
     import xml.etree.ElementTree as ET
 
+
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
 def tensor2im(image_tensor, imtype=np.uint8):
@@ -94,6 +95,9 @@ def _process(ids):
 
 
 def weights_init(m):
+    """
+        init random weights
+    """
     if isinstance(m, nn.Conv2d):
         nn.init.xavier_normal(m.weight.data)
         m.bias.data.zero_()
@@ -149,10 +153,14 @@ def print_log(msg, file=None, init=False):
 
 def show_jot_opt(opt):
 
+    """
+        by Hongyang.
+        A starter for logging the training/test process
+    """
     if opt.phase == 'train':
         file_name = os.path.join(opt.save_folder,
-                                 'opt_{:s}_start_epoch_{:d}_end_{:d}.txt'.format(
-                                     opt.phase, opt.start_epoch, opt.max_epoch))
+                                 'opt_{:s}_START_epoch_{:d}_iter_{:d}_END_{:d}.txt'.format(
+                                     opt.phase, opt.start_epoch, opt.start_iter, opt.max_epoch))
     else:
         file_name = os.path.join(opt.save_folder, 'opt_{:s}.txt'.format(opt.phase))
 
