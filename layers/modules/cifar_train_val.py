@@ -48,9 +48,9 @@ def load_weights(model_path, model):
     print('test only mode, loading weights ...')
     checkpoints = torch.load(model_path)
     try:
-        print('best test accu is: {:.4f}\n'.format(checkpoints['best_test_acc']))
+        print('best test accu is: {:.4f}'.format(checkpoints['best_test_acc']))
     except KeyError:
-        print('best test accu is: {:.4f}\n'.format(checkpoints['best_acc']))
+        print('best test accu is: {:.4f}'.format(checkpoints['best_acc']))
     weights = checkpoints['state_dict']
     try:
         model.load_state_dict(weights)
@@ -218,10 +218,9 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
 
         # SHOW histogram here
         if opt.draw_hist:
-            which_batch_idx = 67  # 20   # set -1 to see all samples
-            if which_batch_idx == batch_idx:
+            if opt.which_batch_idx == batch_idx:
                 input_vis = vis
-            elif which_batch_idx == -1:
+            elif opt.which_batch_idx == -1:
                 input_vis = vis   # draw all samples in the test
             else:
                 input_vis = None
@@ -239,10 +238,10 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
         outputs, stats = model(inputs_, targets, batch_idx, input_vis)
 
         if input_vis is not None:
-            if which_batch_idx == -1:
+            if opt.which_batch_idx == -1:
                 stats_all_data = _update_all_data(stats_all_data, stats)
             else:
-                # TODO: for now if input_vis is True, no multi_crop_test
+                # TODO: for now if input_vis is True, no multi_crop_test is allowed
                 for i in range(21):
                     stats[3]['Y'][i] = 0. \
                         if stats[3]['Y'][i] == [] else \
@@ -250,7 +249,8 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
                 plot_info = {
                     'd2_num': outputs.size(2),
                     'curr_iter': batch_idx,
-                    'model': os.path.basename(opt.cifar_model)
+                    'model': os.path.basename(opt.cifar_model),
+                    'target': not opt.non_target_j
                 }
                 vis.plot_hist(stats, plot_info)
 
@@ -288,13 +288,14 @@ def test(testloader, model, criterion, opt, vis, epoch=0):
                     vis.plot_loss(errors=curr_info,
                                   epoch=epoch, i=batch_idx, max_i=len(testloader), train=False)
     # draw stats for all data here
-    if opt.draw_hist and which_batch_idx == -1:
+    if opt.draw_hist and opt.which_batch_idx == -1:
         for i in range(21):
             stats_all_data[3]['Y'][i] = 0. \
                 if stats_all_data[3]['Y'][i] == [] else \
                 np.mean(stats_all_data[3]['Y'][i])
         plot_info = {
-            'model': os.path.basename(opt.cifar_model)
+            'model': os.path.basename(opt.cifar_model),
+            'target': not opt.non_target_j
         }
         vis.plot_hist(stats_all_data, plot_info, all_sample=True)
 

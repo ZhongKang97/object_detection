@@ -2,10 +2,10 @@ import argparse
 import random
 from utils.util import *
 
-parser = argparse.ArgumentParser(description='Convolution Capsule Network')
+parser = argparse.ArgumentParser(description='Object Detection')
 parser.add_argument('--experiment_name', default='ssd_rerun')
 parser.add_argument('--dataset', default='coco',
-                    help='[ voc | coco | cifar10 | cifar100 | svhn | fmnist ]')
+                    help='[ voc | coco ]')
 parser.add_argument('--deploy', action='store_true')
 # args_temp = parser.parse_args()
 
