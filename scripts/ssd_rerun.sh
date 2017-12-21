@@ -3,7 +3,7 @@
 start=`date +%s`
 
 # train
-CUDA_VISIBLE_DEVICES=0,1 python train.py \
+CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py \
 --experiment_name=ssd_rerun --debug_mode=False \
 --dataset=coco \
 --batch_size=4 --lr=0.0001 \
