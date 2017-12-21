@@ -27,7 +27,7 @@ Many thanks to the original author [@Max](https://github.com/amdegroot)!
 
 ## Installation
 - Install [PyTorch](http://pytorch.org/), clone this repository, etc.
-- Please follow the instructions in the [original](https://github.com/hli2020/object_detection#installation) forked version.
+- Please follow the instructions in the [original](https://github.com/amdegroot/ssd.pytorch#installation) forked version.
 - We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process.
 There is a tutorial on how to use it.
 

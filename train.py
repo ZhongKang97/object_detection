@@ -1,9 +1,4 @@
 from __future__ import print_function
-import os
-import numpy as np
-import time
-
-import torch
 import torch.optim as optim
 from torch.autograd import Variable
 import torch.utils.data as data
@@ -12,109 +7,99 @@ from data import detection_collate
 from data.create_dset import create_dataset
 from layers.modules import MultiBoxLoss
 from ssd import build_ssd           # this is a function
-from option.train_opt import args
-# TODO: LAUNCH VISDOM: python -m visdom.server -port PORT_ID
-if args.visdom:
-    import visdom
-    vis = visdom.Visdom(port=args.port_id)
+from option.train_opt import TrainOptions
+from utils.util import *
+from utils.train import *
+from utils.visualizer import Visualizer
 
+# config
+option = TrainOptions()
+option.setup_config()
+args = option.opt
 
-def adjust_learning_rate(optimizer, step):
-    """Sets the learning rate to the initial LR decayed by 10 at every specified step
-    # Adapted from PyTorch Imagenet example:
-    # https://github.com/pytorch/examples/blob/master/imagenet/main.py
-    """
-    schedule_list = np.array(args.schedule)
-    decay = args.gamma ** (sum(step >= schedule_list))
-    lr = args.lr * decay
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-    return lr
-
-
+# dataset
 dataset = create_dataset(args)
 data_loader = data.DataLoader(dataset, args.batch_size, num_workers=args.num_workers,
                               shuffle=True, collate_fn=detection_collate, pin_memory=True)
+# model
+ssd_net, (args.start_epoch, args.start_iter) = build_ssd(args, dataset.num_classes)
 
-ssd_net, start_iter = build_ssd(args, dataset.num_classes)
+# init log file
+show_jot_opt(args)
+
+# optim, loss
 optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
                       momentum=args.momentum, weight_decay=args.weight_decay)
-criterion = MultiBoxLoss(dataset.num_classes, 0.5, True, 0, True, 3, 0.5, False, args.use_cuda)
+criterion = MultiBoxLoss(dataset.num_classes, 0.5, True,
+                         0, True, 3, 0.5, False, args.use_cuda)
+# init visualizer
+visual = Visualizer(args)
+
 
 epoch_size = len(dataset) // args.batch_size
-batch_iterator = None
+for epoch in range(args.start_epoch, args.max_epoch+1):
 
-# write options and loss file
-log_file_name = os.path.join(args.save_folder,
-                             'opt_loss_{:s}_start_iter_{:d}_end_iter_{:d}.txt'.format(
-                                 args.phase, start_iter, args.max_iter))
-with open(log_file_name, 'wt') as log_file:
-    log_file.write('------------ Options -------------\n')
-    for k, v in sorted(vars(args).items()):
-        log_file.write('%s: %s\n' % (str(k), str(v)))
-
-    log_file.write('-------------- End ----------------\n')
-    now = time.strftime("%c")
-    log_file.write('================ Training Loss (%s) ================\n' % now)
-
-
-for iteration in range(start_iter, args.max_iter+1):
-
-    if (not batch_iterator) or (iteration % epoch_size == 0):
-        # create batch iterator after one epoch ends
-        batch_iterator = iter(data_loader)
+    batch_iterator = iter(data_loader)
 
     old_lr = optimizer.param_groups[0]['lr']
-    adjust_learning_rate(optimizer, iteration)
+    adjust_learning_rate(optimizer, epoch, args)
     new_lr = optimizer.param_groups[0]['lr']
-    if iteration == start_iter:
-        print('\ninit learning rate {:f} at iter {:d}\n'.format(old_lr, iteration))
-    if old_lr != new_lr:
-        print('\nchange learning rate from {:f} to {:f} at iter {:d}\n'.format(old_lr, new_lr, iteration))
-    # load train data
-    images, targets = next(batch_iterator)
-
-    if args.use_cuda:
-        images = Variable(images.cuda())
-        targets = [Variable(anno.cuda(), volatile=True) for anno in targets]
+    if epoch == args.start_epoch:  # only execute once
+        print_log('\ninit learning rate {:f} at epoch {:d}, iter {:d}\n'.format(
+            old_lr, epoch, args.start_iter), args.file_name)
+        start_iter = args.start_iter
     else:
-        images = Variable(images)
-        targets = [Variable(anno, volatile=True) for anno in targets]
+        start_iter = 0
+    if old_lr != new_lr:
+        print_log('\nchange learning rate from {:f} to {:f} at epoch {:d}\n'.format(
+            old_lr, new_lr, epoch), args.file_name)
 
-    t0 = time.time()
-    # forward
-    out = ssd_net(images)
-    # backward
-    optimizer.zero_grad()
-    loss_l, loss_c = criterion(out, targets, args.debug)
-    loss = loss_l + loss_c
-    loss.backward()
-    optimizer.step()
-    t1 = time.time()
+    cnt = 0
+    for iter_ind in range(start_iter, epoch_size):
 
-    # jot down the loss
-    if iteration % args.loss_freq == 0:
+        # load train data
+        images, targets = next(batch_iterator)
+        if args.use_cuda:
+            images = Variable(images.cuda())
+            targets = [Variable(anno.cuda(), volatile=True) for anno in targets]
+        else:
+            images = Variable(images)
+            targets = [Variable(anno, volatile=True) for anno in targets]
 
-        msg = '[%s]\titer %d || Loss: %.4f || time: %.4f sec/iter' % \
-              (args.experiment_name, iteration, loss.data[0], (t1 - t0))
-        print(msg)
-        with open(log_file_name, "a") as log_file:
-            log_file.write('%s\n' % msg)
+        # verbose
+        cnt += images.size(0)
+        if iter_ind == epoch_size - 1:
+            print_log('total {:d} images are processed; true total images are {:d}\n'.format(
+                cnt, len(dataset)), args.file_name)
 
-        if args.visdom and args.send_images_to_visdom:
-            random_batch_index = np.random.randint(images.size(0))
-            vis.image(images.data[random_batch_index].cpu().numpy())
+        t0 = time.time()
+        # forward
+        out = ssd_net(images)
+        # backward
+        optimizer.zero_grad()
+        loss_l, loss_c = criterion(out, targets, args.debug_mode)
+        loss = loss_l + loss_c
+        loss.backward()
+        optimizer.step()
+        t1 = time.time()
 
-    # save results
-    if (iteration % args.save_freq == 0) | (iteration == args.max_iter):
-        print('Saving state, iter:', iteration)
-        torch.save({
-            'state_dict': ssd_net.state_dict(),
-            'iteration': iteration,
-        }, '%s/ssd%d_%s_iter_' % (args.save_folder, args.ssd_dim, dataset.name) + repr(iteration) + '.pth')
+        losses, progress = (loss, loss_l, loss_c), (epoch, iter_ind, epoch_size)
+        # jot down the loss
+        if (iter_ind % args.loss_freq) == 0 or iter_ind == (epoch_size-1):
 
-print('Training done. start_iter / end_iter: {:d}/{:d}'.format(start_iter, args.max_iter))
-torch.save({
-            'state_dict': ssd_net.state_dict(),
-            'iteration': iteration,
-        }, args.save_folder + '/final_' + args.version + '.pth')
+            visual.print_loss(losses, progress, (t0, t1))
+            visual.plot_loss(losses, progress)
+            visual.print_info(progress, (True, new_lr))
+
+        # save results just in debug mode
+        if (iter_ind % args.save_freq == 0) and args.debug_mode:
+            save_model(progress, args, (ssd_net, dataset))
+
+    # one epoch ends, save results
+    # by default the debug mode won't go here
+    if epoch % args.save_freq == 0 or epoch == args.max_epoch:
+        save_model(progress, args, (ssd_net, dataset))
+
+print_log('Training done. start_epoch / end_epoch: {:d}/{:d}'.format(
+    args.start_epoch, args.max_iter), args.file_name)
+visual.print_info(progress, (False, new_lr))
