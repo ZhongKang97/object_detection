@@ -89,7 +89,7 @@ for epoch in range(args.start_epoch, args.max_epoch):
 
             visual.print_loss(losses, progress, (t0, t1))
             visual.plot_loss(losses, progress)
-            visual.print_info(progress, (True, new_lr))
+            visual.print_info(progress, (True, new_lr, t1-t0))
 
         # save results just in debug mode
         if (iter_ind % args.save_freq == 0) and args.debug_mode:
@@ -102,4 +102,4 @@ for epoch in range(args.start_epoch, args.max_epoch):
 
 print_log('Training done. start_epoch / end_epoch: {:d}/{:d}'.format(
     args.start_epoch, args.max_epoch), args.file_name)
-visual.print_info(progress, (False, new_lr))
+visual.print_info(progress, (False, new_lr, t1-t0))
