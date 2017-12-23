@@ -28,8 +28,7 @@ ssd_net, (args.start_epoch, args.start_iter) = build_ssd(args, dataset.num_class
 show_jot_opt(args)
 
 # optim, loss
-optimizer = optim.SGD(ssd_net.parameters(), lr=args.lr,
-                      momentum=args.momentum, weight_decay=args.weight_decay)
+optimizer = set_optimizer(ssd_net, args)
 criterion = MultiBoxLoss(dataset.num_classes, 0.5, True,
                          0, True, 3, 0.5, False, args.use_cuda)
 # init visualizer

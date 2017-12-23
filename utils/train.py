@@ -1,5 +1,6 @@
 from utils.util import *
 import torch
+import torch.optim as optim
 
 
 def adjust_learning_rate(optimizer, step, args):
@@ -33,3 +34,19 @@ def save_model(progress, args, others):
                 'iter': iter_ind,
     }, '{:s}/{:s}ssd{:d}_{:s}_epoch_{:d}_iter_{:d}.pth'.format(
         args.save_folder, prefix, args.ssd_dim, dataset.name, epoch, iter_ind))
+
+
+def set_optimizer(net, opt):
+
+    optimizer = []
+    if opt.optim == 'sgd':
+        optimizer = optim.SGD(net.parameters(), lr=opt.lr,
+                              momentum=opt.momentum, weight_decay=opt.weight_decay)
+    elif opt.optim == 'adam':
+        optimizer = optim.Adam(net.parameters(), lr=opt.lr,
+                               weight_decay=opt.weight_decay, betas=(opt.beta1, 0.999))
+    elif opt.optim == 'rmsprop':
+        optimizer = optim.RMSprop(opt.parameters(), lr=opt.lr,
+                                  weight_decay=opt.weight_decay, momentum=opt.momentum,
+                                  alpha=0.9, centered=True)
+    return optimizer
