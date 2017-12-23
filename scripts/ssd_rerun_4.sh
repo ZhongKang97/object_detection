@@ -3,11 +3,11 @@
 start=`date +%s`
 
 # train
-CUDA_VISIBLE_DEVICES=4,5 python train.py \
---experiment_name=ssd_rerun_3 --debug_mode=False \
+CUDA_VISIBLE_DEVICES=6,7 python train.py \
+--experiment_name=ssd_rerun_4 --debug_mode=False \
 --dataset=coco \
---batch_size=4 --lr=0.0001 \
---optim=rmsprop \
+--batch_size=4 --lr=0.001 \
+--optim=adam \
 --max_epoch=20 --schedule 6 12 16 \
 --prior_config=v2_512 --ssd_dim=512
 
