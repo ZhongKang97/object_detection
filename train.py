@@ -37,7 +37,7 @@ visual = Visualizer(args)
 
 
 epoch_size = len(dataset) // args.batch_size
-for epoch in range(args.start_epoch, args.max_epoch+1):
+for epoch in range(args.start_epoch, args.max_epoch):
 
     batch_iterator = iter(data_loader)
 
@@ -101,5 +101,5 @@ for epoch in range(args.start_epoch, args.max_epoch+1):
         save_model(progress, args, (ssd_net, dataset))
 
 print_log('Training done. start_epoch / end_epoch: {:d}/{:d}'.format(
-    args.start_epoch, args.max_iter), args.file_name)
+    args.start_epoch, args.max_epoch), args.file_name)
 visual.print_info(progress, (False, new_lr))
