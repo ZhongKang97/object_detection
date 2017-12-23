@@ -68,7 +68,7 @@ class Visualizer(object):
         left_time = time_per_iter * (epoch_size-1-iter_ind + (self.opt.max_epoch-1-epoch)*epoch_size) / 3600 if \
             still_run else 0
         status = 'RUNNING' if still_run else 'DONE'
-        dynamic = 'start epoch: {:d}, iter: {:d}' \
+        dynamic = 'start epoch: {:d}, iter: {:d}<br/>' \
                   'curr lr {:.8f}<br/>' \
                   'epoch/iter [{:d}/{:d}][{:d}/{:d}]<br/>' \
                   'est. left time: {:.4f} hours<br/>'.format(
