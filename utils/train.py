@@ -46,7 +46,7 @@ def set_optimizer(net, opt):
         optimizer = optim.Adam(net.parameters(), lr=opt.lr,
                                weight_decay=opt.weight_decay, betas=(opt.beta1, 0.999))
     elif opt.optim == 'rmsprop':
-        optimizer = optim.RMSprop(opt.parameters(), lr=opt.lr,
+        optimizer = optim.RMSprop(net.parameters(), lr=opt.lr,
                                   weight_decay=opt.weight_decay, momentum=opt.momentum,
                                   alpha=0.9, centered=True)
     return optimizer
