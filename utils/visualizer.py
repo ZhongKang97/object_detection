@@ -70,13 +70,16 @@ class Visualizer(object):
         status = 'RUNNING' if still_run else 'DONE'
         dynamic = 'start epoch: {:d}, iter: {:d}<br/>' \
                   'curr lr {:.8f}<br/>' \
-                  'epoch/iter [{:d}/{:d}][{:d}/{:d}]<br/>' \
-                  'est. left time: {:.4f} hours<br/>'.format(
+                  'progress epoch/iter [{:d}/{:d}][{:d}/{:d}]<br/><br/>' \
+                  'est. left time: {:.4f} hours<br/>' \
+                  'time/image: {:.4f} sec<br/>'.format(
                     self.opt.start_epoch, self.opt.start_iter,
                     lr,
                     epoch, self.opt.max_epoch, iter_ind, epoch_size,
-                    left_time)
-        common_suffix = '<br/><br/>-----------<br/>batch_size: {:d}'.format(self.opt.batch_size)
+                    left_time, time_per_iter/self.opt.batch_size)
+        common_suffix = '<br/><br/>-----------<br/>batch_size: {:d}<br/>' \
+                        'optim: {:s}<br/>'.format(
+                            self.opt.batch_size, self.opt.optim)
 
         msg = 'status: <b>{:s}</b><br/>'.format(status) + dynamic + common_suffix
         self.vis.text(msg, win=self.dis_win_id_txt)
