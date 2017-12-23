@@ -63,15 +63,17 @@ class Visualizer(object):
     def print_info(self, progress, others):
 
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
-        still_run, lr = others[0], others[1]
+        still_run, lr, time_per_iter = others[0], others[1], others[2]
 
+        left_time = time_per_iter * (epoch_size-1-iter_ind + (self.opt.max_epoch-1-epoch)*epoch_size) / 3600 if \
+            still_run else 0
         status = 'RUNNING' if still_run else 'DONE'
-        dynamic = 'curr lr {:f}<br/>' \
+        dynamic = 'curr lr {:8f}<br/>' \
                   'epoch/iter [{:d}/{:d}][{:d}/{:d}]<br/>' \
-                  'est. left time: {:f}<br/>'.format(
+                  'est. left time: {:4f}<br/>'.format(
                     lr,
                     epoch, self.opt.max_epoch, iter_ind, epoch_size,
-                    0)
+                    left_time)
         common_suffix = '<br/><br/>-----------<br/>batch_size: {:d}'.format(self.opt.batch_size)
 
         msg = 'status: <b>{:s}</b><br/>'.format(status) + dynamic + common_suffix
