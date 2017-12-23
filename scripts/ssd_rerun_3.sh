@@ -6,7 +6,7 @@ start=`date +%s`
 CUDA_VISIBLE_DEVICES=4 python train.py \
 --experiment_name=ssd_rerun_3 --debug_mode=False \
 --dataset=coco \
---batch_size=4 --lr=0.01 \
+--batch_size=4 --lr=0.0001 \
 --optim=sgd \
 --max_epoch=20 --schedule 6 12 16 \
 --prior_config=v2_512 --ssd_dim=512
