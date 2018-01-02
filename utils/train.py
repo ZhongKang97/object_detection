@@ -50,3 +50,40 @@ def set_optimizer(net, opt):
                                   weight_decay=opt.weight_decay, momentum=opt.momentum,
                                   alpha=0.9, centered=True)
     return optimizer
+
+
+def set_model_weight_train(model, opts):
+
+    start_epoch = 0
+    start_iter = 0
+    if opts.resume:
+        resume_file = os.path.join(opts.base_save_folder, (opts.resume + '.pth'))
+        if os.path.isfile(resume_file):
+            print("=> loading checkpoint '{:s}'".format(resume_file))
+            checkpoint = torch.load(resume_file)
+            weights = checkpoint['state_dict']
+            try:
+                model.load_state_dict(weights)
+            except KeyError:
+                weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
+                model.load_state_dict(weights_new)
+            start_epoch = checkpoint['epoch']
+            start_iter = checkpoint['iter']
+        else:
+            print("=> no checkpoint found at '{}'".format(opts.resume))
+    else:
+        if opts.no_pretrain:
+            print('Train from scratch...')
+            model.apply(weights_init)
+        else:
+            # use pretrain model to init the network/model
+            vgg_weights = torch.load('data/pretrain/' + opts.pretrain_model)
+            print('Loading pretrain network...')
+            model.vgg.load_state_dict(vgg_weights)
+            print('Initializing weights of the newly added layers...')
+            # initialize newly added layers' weights with xavier method
+            model.extras.apply(weights_init)
+            model.loc.apply(weights_init)
+            model.conf.apply(weights_init)
+
+    return model, start_epoch, start_iter
