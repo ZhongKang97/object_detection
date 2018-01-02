@@ -4,6 +4,7 @@ import ntpath
 
 
 # this is a minor change for demo
+# this is a further change for demo
 class Visualizer(object):
     def __init__(self, opt):
         self.opt = opt
