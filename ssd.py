@@ -2,7 +2,7 @@ import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from utils.util import *
+from utils.train import *
 from layers import *
 from option.config import *
 
@@ -26,6 +26,8 @@ mbox = {
 
 
 def build_ssd(opts, num_classes):
+    """shared by both train and test
+    """
     phase = opts.phase
     size = opts.ssd_dim
 
@@ -43,9 +45,8 @@ def build_ssd(opts, num_classes):
     if phase == 'train':
         model.train()
         # init the network
-        model.load_weight_new()
-        start_epoch = model.opts.start_epoch
-        start_iter = model.opts.start_iter
+        model, start_epoch, start_iter = set_model_weight_train(model, opts)
+        # model.load_weight_new()
         if opts.debug_mode:
             print(model)
         else:
@@ -195,38 +196,6 @@ class SSD(nn.Module):
                 self.priors
             )
         return output
-
-    def load_weight_new(self):
-        if self.opts.resume:
-            resume_file = os.path.join(self.opts.base_save_folder, (self.opts.resume + '.pth'))
-            if os.path.isfile(resume_file):
-                print("=> loading checkpoint '{:s}'".format(resume_file))
-                checkpoint = torch.load(resume_file)
-                self.opts.start_epoch = checkpoint['epoch']
-                self.opts.start_iter = checkpoint['iter']
-                weights = checkpoint['state_dict']
-                try:
-                    self.load_state_dict(weights)
-                except KeyError:
-                    weights_new = collections.OrderedDict([(k[7:], v) for k, v in weights.items()])
-                    self.load_state_dict(weights_new)
-            else:
-                print("=> no checkpoint found at '{}'".format(self.opts.resume))
-        else:
-            self.opts.start_epoch = 0
-            self.opts.start_iter = 0
-            if self.opts.no_pretrain:
-                print('Train from scratch...')
-                self.apply(weights_init)
-            else:
-                vgg_weights = torch.load('data/pretrain/' + self.opts.pretrain_model)
-                print('Loading pretrain network...')
-                self.vgg.load_state_dict(vgg_weights)
-                print('Initializing weights of the newly added layers...')
-                # initialize newly added layers' weights with xavier method
-                self.extras.apply(weights_init)
-                self.loc.apply(weights_init)
-                self.conf.apply(weights_init)
 
 
 # This function is derived from torchvision VGG make_layers()

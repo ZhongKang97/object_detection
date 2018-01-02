@@ -200,7 +200,7 @@ def torch_summarize(model, show_weights=True, show_parameters=True):
         if show_weights:
             tmpstr += ', weights={}'.format(weights)
         if show_parameters:
-            tmpstr +=  ', parameters={}'.format(params)
+            tmpstr += ', parameters={}'.format(params)
         tmpstr += '\n'
 
     tmpstr = tmpstr + ')'
