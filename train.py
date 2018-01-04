@@ -95,7 +95,7 @@ for epoch in range(args.start_epoch, args.max_epoch):
 
     # one epoch ends, save results
     # by default the debug mode won't go here
-    if epoch % args.save_freq == 0 or epoch == args.max_epoch:
+    if epoch % args.save_freq == 0 or epoch == args.max_epoch-1:
         save_model(progress, args, (ssd_net, dataset))
 
 print_log('Training done. start_epoch / end_epoch: {:d}/{:d}'.format(
