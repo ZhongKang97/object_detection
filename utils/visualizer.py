@@ -29,6 +29,7 @@ class Visualizer(object):
 
     def plot_loss(self, errors, progress, others=None):
         """draw loss on visdom console"""
+        #TODO: set figure height and width in visdom
         loss, loss_l, loss_c = errors[0].data[0], errors[1].data[0], errors[2].data[0]
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         x_progress = epoch + float(iter_ind/epoch_size)
@@ -61,6 +62,7 @@ class Visualizer(object):
 
     def print_info(self, progress, others):
         """print useful info on visdom console"""
+        #TODO: test case and set size
 
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         still_run, lr, time_per_iter = others[0], others[1], others[2]
@@ -91,8 +93,8 @@ class Visualizer(object):
             i, total_im, test_time = progress[0], progress[1], progress[2]
             all_boxes, im, im_name = others[0], others[1], others[2]
 
-            print_log('[{:s}]\tim_detect:\t{:d}/{:d} {:.3f}s'.format(
-                name, i, total_im, test_time))
+            print_log('[{:s}][{:s}]\tim_detect:\t{:d}/{:d} {:.3f}s'.format(
+                self.opt.experiment_name, name, i, total_im, test_time))
 
             dets = np.asarray(all_boxes)
             result_im = self._show_detection_result(im, dets[:, i], im_name)
@@ -102,7 +104,8 @@ class Visualizer(object):
                            opts={
                                'title': 'subfolder: {:s}, name: {:s}'.format(
                                    os.path.basename(self.opt.save_folder), im_name),
-                               # 'height': 500,
+                               'height': 350,
+                               'width': 400,
                            })
             self.dis_im_cnt += 1
 
