@@ -12,6 +12,7 @@ import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
+#TODO
 import cv2
 import numpy as np
 from utils.util import ET
@@ -230,7 +231,7 @@ class COCODetection(data.Dataset):
             self.coco_2 = COCO(anno_file_2)
             self.im_path = root + '/train2014'
             self.im_path_2 = root + '/val2014'
-        else:
+        elif phase == 'test':
             anno_file = 'instances_minival2014.json'
             self.im_path = root + '/val2014'
 

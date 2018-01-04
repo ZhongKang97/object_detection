@@ -28,17 +28,18 @@ Many thanks to the original author [@Max](https://github.com/amdegroot)!
 ## Installation
 - Install [PyTorch](http://pytorch.org/), clone this repository, etc.
 - Please follow the instructions in the [original](https://github.com/amdegroot/ssd.pytorch#installation) forked version.
-- We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process.
+- We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process. Install it: `pip install visdom`
 There is a tutorial on how to use it.
-
 - (Optional, buggy now) install `plotly`: `conda install -c plotly plotly`
+- For now, some image processing uses `cv2`, to install it with conda, follow [here](https://anaconda.org/conda-forge/opencv).
+
 
 ## Datasets
 To make things easy, we provide a simple dataset loader that enherits `torch.utils.data.Dataset`
 making it fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).
 
 ### VOC Dataset
-##### Download VOC 2007 trainval & test and 2012 trainval
+Download VOC 2007 trainval & test and 2012 trainval files.
 
 ```Shell
 # specify a directory for dataset to be downloaded into, else default is ~/data/
@@ -47,8 +48,16 @@ sh data/scripts/VOC2012.sh # <directory>
 ```
 
 ### COCO
+Install the COCO API.
 
-## Training SSD
+```Shell
+cd data/cocoapi-master_Oct_30/PythonAPI_coco_Oct_30
+make
+sudo make install
+sudo python setup.py install
+```
+
+## Train
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:
 https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 - By default, we assume you have downloaded the file in the `data/pretrain` dir:
@@ -74,7 +83,7 @@ python train.py
   * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train.py` for options)
 -->
 
-## Evaluation/Test
+## Test
 To evaluate a trained network:
 
 ```Shell
@@ -84,6 +93,7 @@ You can specify the parameters listed in the `option/test_opt.py` file by flaggi
 
 
 
+#TODO in the following
 ## Performance
 
 ### VOC2007 Test

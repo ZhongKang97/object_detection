@@ -11,11 +11,10 @@ option = TestOptions()
 option.setup_config()
 args = option.opt
 
+dataset = create_dataset(args)
+
 # init log file
 show_jot_opt(args)
-
-dataset = create_dataset(args)
-ssd_net = build_ssd(args, dataset.num_classes)
 
 # init visualizer
 visual = Visualizer(args, dataset)
@@ -27,6 +26,7 @@ if os.path.isfile(args.det_file):
     print('Raw boxes exist! skip prediction and directly evaluate!...')
     all_boxes = pickle.load(open(args.det_file, 'rb'))
 else:
+    ssd_net = build_ssd(args, dataset.num_classes)
     t = Timer()
     num_images = len(dataset)
     all_boxes = [[[] for _ in range(num_images)]

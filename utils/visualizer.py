@@ -88,13 +88,14 @@ class Visualizer(object):
         self.vis.text(msg, win=self.dis_win_id_txt)
 
     def show_image(self, progress, others=None):
+        """for test, print log info in console and show detection results on visdom"""
         if self.opt.phase == 'test':
             name = os.path.basename(os.path.dirname(self.opt.det_file))
             i, total_im, test_time = progress[0], progress[1], progress[2]
             all_boxes, im, im_name = others[0], others[1], others[2]
 
             print_log('[{:s}][{:s}]\tim_detect:\t{:d}/{:d} {:.3f}s'.format(
-                self.opt.experiment_name, name, i, total_im, test_time))
+                self.opt.experiment_name, name, i, total_im, test_time), self.opt.file_name)
 
             dets = np.asarray(all_boxes)
             result_im = self._show_detection_result(im, dets[:, i], im_name)
