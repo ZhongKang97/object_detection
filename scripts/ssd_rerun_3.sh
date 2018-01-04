@@ -2,7 +2,7 @@
 
 start=`date +%s`
 
-NAME=ssd_rerun
+NAME=ssd_rerun_3
 ## train
 #CUDA_VISIBLE_DEVICES=4,5 python train.py \
 #--experiment_name=$NAME --debug_mode=False \
@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=2 python test.py \
 --experiment_name=$NAME \
 --dataset=coco \
 --prior_config=v2_512 --ssd_dim=512 \
---trained_model=ssd512_COCO_epoch_20_iter_29570 \
+--trained_model=ssd512_COCO_epoch_10_iter_29570 \
 --visualize_thres=.2
 
 end=`date +%s`

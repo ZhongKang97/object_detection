@@ -1,8 +1,9 @@
 from .util import *
 import numpy as np
 from matplotlib import pyplot as plt
-import plotly.tools as tls
+#import plotly.tools as tls
 from scipy.misc import imread
+plt.switch_backend('agg')
 
 
 # this is a minor change for demo
