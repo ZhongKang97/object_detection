@@ -3,6 +3,7 @@ data/raw
 data/cifar-10-batches-py
 data/cifar-100-python
 data/fmnist
+*.png
 *.json
 *.pkl
 *.eps
@@ -12,6 +13,7 @@ data/fmnist
 *.txt
 *.pth
 *.mat
+!doc/*
 
 # DS_Store
 .DS_Store

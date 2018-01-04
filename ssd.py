@@ -69,7 +69,7 @@ def build_ssd(opts, num_classes):
             weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
             model.load_state_dict(weights)
         print('Finished loading model in test phase!')
-        if opts.cuda:
+        if opts.use_cuda:
             model = model.cuda()
             cudnn.benchmark = True
         return model

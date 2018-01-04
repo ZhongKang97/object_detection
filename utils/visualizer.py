@@ -1,12 +1,14 @@
-from ..utils.util import *
+from .util import *
 import numpy as np
-import ntpath
+from matplotlib import pyplot as plt
+import plotly.tools as tls
+from scipy.misc import imread
 
 
 # this is a minor change for demo
 # this is a further change for demo
 class Visualizer(object):
-    def __init__(self, opt):
+    def __init__(self, opt, dataset=None):
         self.opt = opt
         if self.opt.no_visdom is False:
             import visdom
@@ -15,11 +17,17 @@ class Visualizer(object):
             # loss/line 100, text 200, images/hist/etc 300
             self.dis_win_id_line = 100
             self.dis_win_id_txt = 200
-            self.dis_win_id_im = 300
+            self.dis_win_id_im, self.dis_im_cnt, self.dis_im_cycle = 300, 0, 4
             self.loss_data = {'X': [], 'Y': [], 'legend': ['total_loss', 'loss_c', 'loss_l']}
+            # for visualization
+            self.num_classes = dataset.num_classes
+            self.class_name = dataset.COCO_CLASSES_names
+            self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()
+            self.save_det_res_path = os.path.join(self.opt.save_folder, 'det_result')
+            mkdirs(self.save_det_res_path)
 
     def plot_loss(self, errors, progress, others=None):
-
+        """draw loss on visdom console"""
         loss, loss_l, loss_c = errors[0].data[0], errors[1].data[0], errors[2].data[0]
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         x_progress = epoch + float(iter_ind/epoch_size)
@@ -39,7 +47,7 @@ class Visualizer(object):
         )
 
     def print_loss(self, errors, progress, others=None):
-
+        """show loss info in console"""
         loss, loss_l, loss_c = errors[0].data[0], errors[1].data[0], errors[2].data[0]
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         t0, t1 = others[0], others[1]
@@ -50,19 +58,8 @@ class Visualizer(object):
                 loss, loss_l, loss_c, (t1 - t0)/self.opt.batch_size)
         print_log(msg, self.opt.file_name)
 
-    def show_image(self, epoch, images):
-        # TODO: visualize image here
-        # show in the visdom
-        idx = 2 if self.opt.model == 'default' or self.opt.add_gan_loss else 1
-        for label, image_numpy in images.items():
-            self.vis.image(image_numpy.transpose([2, 0, 1]), opts=dict(title=label),
-                           win=self.display_win_id + idx)
-            idx += 1
-        # if args.use_visdom:
-        #     random_batch_index = np.random.randint(images.size(0))
-        #     args.vis.image(images.data[random_batch_index].cpu().numpy())
-
     def print_info(self, progress, others):
+        """print useful info on visdom console"""
 
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         still_run, lr, time_per_iter = others[0], others[1], others[2]
@@ -83,5 +80,78 @@ class Visualizer(object):
                         'optim: {:s}<br/>'.format(
                             self.opt.batch_size, self.opt.optim)
 
-        msg = 'status: <b>{:s}</b><br/>'.format(status) + dynamic + common_suffix
+        msg = 'phase: {:s}<br/>status: <b>{:s}</b><br/>'.format(self.opt.phase, status)\
+              + dynamic + common_suffix
         self.vis.text(msg, win=self.dis_win_id_txt)
+
+    def show_image(self, progress, others=None):
+        if self.opt.phase == 'test':
+            name = os.path.basename(os.path.dirname(self.opt.det_file))
+            i, total_im, test_time = progress[0], progress[1], progress[2]
+            all_boxes, im, im_name = others[0], others[1], others[2]
+
+            print_log('[{:s}]\tim_detect:\t{:d}/{:d} {:.3f}s'.format(
+                name, i, total_im, test_time))
+
+            dets = np.asarray(all_boxes)
+            result_im = self._show_detection_result(im, dets[:, i], im_name)
+            result_im = np.moveaxis(result_im, 2, 0)
+            win_id = self.dis_win_id_im + (self.dis_im_cnt % self.dis_im_cycle)
+            self.vis.image(result_im, win=win_id,
+                           opts={
+                               'title': 'subfolder: {:s}, name: {:s}'.format(
+                                   os.path.basename(self.opt.save_folder), im_name),
+                               # 'height': 500,
+                           })
+            self.dis_im_cnt += 1
+
+    def _show_detection_result(self, im, results, im_name):
+
+        plt.figure()
+        plt.imshow(im)
+        currentAxis = plt.gca()
+
+        for cls_ind in range(1, len(results)):
+            if results[cls_ind] == []:
+                continue
+            else:
+
+                cls_name = self.class_name[cls_ind-1]
+                cls_color = self.color[cls_ind-1]
+                inst_num = results[cls_ind].shape[0]
+                for inst_ind in range(inst_num):
+                    if results[cls_ind][inst_ind, -1] >= self.opt.visualize_thres:
+
+                        score = results[cls_ind][inst_ind, -1]
+                        pt = results[cls_ind][inst_ind, 0:-1]
+                        coords = (pt[0], pt[1]), pt[2]-pt[0]+1, pt[3]-pt[1]+1
+                        display_txt = '{:s}: {:.2f}'.format(cls_name, score)
+
+                        currentAxis.add_patch(plt.Rectangle(*coords, fill=False, edgecolor=cls_color, linewidth=2))
+                        currentAxis.text(pt[0], pt[1], display_txt, bbox={'facecolor': cls_color, 'alpha': .5})
+                    else:
+                        break
+        result_file = '{:s}/{:s}.png'.format(self.save_det_res_path, im_name[:-4])
+        plt.axis('off')
+        plt.savefig(result_file, dpi=300, bbox_inches="tight", pad_inches=0)
+        plt.close()
+        # ref: https://github.com/facebookresearch/visdom/issues/119
+        # plotly_fig = tls.mpl_to_plotly(fig)
+        # self.vis._send({
+        #     data=plotly_fig.data,
+        #     layout=plotly_fig.layout,
+        # })
+        result_im = imread(result_file)
+        return result_im
+
+# idx = 2 if self.opt.model == 'default' or self.opt.add_gan_loss else 1
+# for label, image_numpy in images.items():
+#     self.vis.image(image_numpy.transpose([2, 0, 1]), opts=dict(title=label),
+#                    win=self.display_win_id + idx)
+#     idx += 1
+# if args.use_visdom:
+#     random_batch_index = np.random.randint(images.size(0))
+#     args.vis.image(images.data[random_batch_index].cpu().numpy())
+
+
+

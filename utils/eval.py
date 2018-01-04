@@ -1,7 +1,5 @@
-import os
-import numpy as np
 import pickle
-from utils.util import ET
+from utils.util import *
 from data.setup_dset import VOC_CLASSES as labelmap
 import json
 
