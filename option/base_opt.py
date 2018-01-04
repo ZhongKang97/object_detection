@@ -22,9 +22,16 @@ class BaseOptions(object):
         self.parser.add_argument('--prior_config', default='v2_512', type=str)
 
     def setup_config(self):
-
+        """pre-process stuff for both train and test"""
+        if hasattr(self.opt, 'subname'):
+            # for test folder name
+            _temp = '' if self.opt.subname == '' else '_'
+            suffix = self.opt.trained_model + _temp + self.opt.subname
+        else:
+            suffix = ''
         self.opt.save_folder = os.path.join(self.opt.base_save_folder,
-                                            self.opt.experiment_name, self.opt.phase)
+                                            self.opt.experiment_name,
+                                            self.opt.phase, suffix)
         if not os.path.exists(self.opt.save_folder):
             mkdirs(self.opt.save_folder)
 
@@ -48,7 +55,15 @@ class BaseOptions(object):
                 self.opt.loss_freq = 200    # in iter unit
                 self.opt.save_freq = 5      # in epoch unit
         else:
-            # TODO: test stage
-            pass
+            self.opt.trained_model = os.path.join(self.opt.base_save_folder,
+                                                  self.opt.experiment_name,
+                                                  'train', self.opt.trained_model+'.pth')
+            if not os.path.isfile(self.opt.trained_model):
+                print('trained model not exist! {:s}'.format(self.opt.trained_model))
+                quit()
+
+            self.opt.show_freq = 50
+            self.opt.det_file = os.path.join(self.opt.save_folder, 'detections_all_boxes.pkl')
+
 
 

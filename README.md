@@ -31,6 +31,8 @@ Many thanks to the original author [@Max](https://github.com/amdegroot)!
 - We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process.
 There is a tutorial on how to use it.
 
+- (Optional, buggy now) install `plotly`: `conda install -c plotly plotly`
+
 ## Datasets
 To make things easy, we provide a simple dataset loader that enherits `torch.utils.data.Dataset`
 making it fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).

@@ -1,4 +1,4 @@
-"""VOC Dataset Classes and COCO
+"""VOC and COCO Datasets
 Updated by: Ellis Brown, Max deGroot, Hongyang Li
 
 Original author: Francisco Massa
@@ -15,17 +15,20 @@ from PIL import Image, ImageDraw, ImageFont
 import cv2
 import numpy as np
 from utils.util import ET
+from scipy.misc import imread
 
-VOC_CLASSES = (  # always index 0
+VOC_CLASSES = (
     'aeroplane', 'bicycle', 'bird', 'boat',
     'bottle', 'bus', 'car', 'cat', 'chair',
     'cow', 'diningtable', 'dog', 'horse',
     'motorbike', 'person', 'pottedplant',
     'sheep', 'sofa', 'train', 'tvmonitor')
 
-# for making bounding boxes pretty
-COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
-          (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
+# note: for coco class names, it resides in 'self.COCO_CLASSES_names'
+
+# # for making bounding boxes pretty
+# COLORS = ((255, 0, 0, 128), (0, 255, 0, 128), (0, 0, 255, 128),
+#           (0, 255, 255, 128), (255, 0, 255, 128), (255, 255, 0, 128))
 
 
 def detection_collate(batch):
@@ -164,7 +167,8 @@ class VOCDetection(data.Dataset):
             # to rgb
             img = img[:, :, (2, 1, 0)]
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
-        return torch.from_numpy(img).permute(2, 0, 1), target, height, width
+        return torch.from_numpy(img).permute(2, 0, 1), \
+               target, height, width
 
     def pull_image(self, index):
         # DEPRECATED
@@ -244,7 +248,7 @@ class COCODetection(data.Dataset):
         self.phase = phase
 
     def __getitem__(self, index):
-        im, gt, h, w = self.pull_item(index)
+        im, gt, h, w, origin_im, im_name = self.pull_item(index)
 
         return im, gt
 
@@ -256,7 +260,7 @@ class COCODetection(data.Dataset):
         if self.phase == 'train':
             coco_2 = self.coco_2
 
-        valid_im = False
+        valid_im, target, path = False, [], []
         while not valid_im:
             img_id = self.ids[index]
             try:
@@ -278,6 +282,7 @@ class COCODetection(data.Dataset):
         img = cv2.imread(os.path.join(self.im_path, path))
         if img is None:
             img = cv2.imread(os.path.join(self.im_path_2, path))
+        origin_im = imread(os.path.join(self.im_path, path))
         height, width, _ = img.shape
 
         if self.target_transform is not None:
@@ -294,4 +299,6 @@ class COCODetection(data.Dataset):
             # to rgb
             img = img[:, :, (2, 1, 0)]
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
-        return torch.from_numpy(img).permute(2, 0, 1), target, height, width
+        return torch.from_numpy(img).permute(2, 0, 1), \
+               target, height, width, origin_im, path
+

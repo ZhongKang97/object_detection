@@ -1,14 +1,13 @@
 from __future__ import print_function
-import torch.optim as optim
 from torch.autograd import Variable
-import torch.utils.data as data
 
+import torch.utils.data as data
 from data import detection_collate
-from data.create_dset import create_dataset
 from layers.modules import MultiBoxLoss
+
+from data.create_dset import create_dataset
 from ssd import build_ssd           # this is a function
 from option.train_opt import TrainOptions
-from utils.util import *
 from utils.train import *
 from utils.visualizer import Visualizer
 
