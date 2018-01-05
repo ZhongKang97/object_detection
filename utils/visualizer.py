@@ -25,6 +25,7 @@ class Visualizer(object):
             self.num_classes = dataset.num_classes
             self.class_name = dataset.COCO_CLASSES_names
             self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()
+            # for both train and test
             self.save_det_res_path = os.path.join(self.opt.save_folder, 'det_result')
             mkdirs(self.save_det_res_path)
 
