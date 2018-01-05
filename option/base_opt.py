@@ -9,7 +9,6 @@ class BaseOptions(object):
         self.parser = argparse.ArgumentParser(description='Object Detection')
         self.parser.add_argument('--experiment_name', default='ssd_rerun')
         self.parser.add_argument('--dataset', default='coco', help='[ voc|coco ]')
-        self.parser.add_argument('--debug_mode', default=True, type=str2bool)
         self.parser.add_argument('--base_save_folder', default='result')
 
         self.parser.add_argument('--manual_seed', default=-1, type=int)

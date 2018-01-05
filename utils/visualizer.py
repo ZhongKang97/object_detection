@@ -113,6 +113,7 @@ class Visualizer(object):
     def _show_detection_result(self, im, results, im_name):
 
         plt.figure()
+        plt.axis('off')     # TODO, still the axis remains
         plt.imshow(im)
         currentAxis = plt.gca()
 
@@ -137,7 +138,7 @@ class Visualizer(object):
                     else:
                         break
         result_file = '{:s}/{:s}.png'.format(self.save_det_res_path, im_name[:-4])
-        plt.axis('off')
+
         plt.savefig(result_file, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close()
         # ref: https://github.com/facebookresearch/visdom/issues/119
