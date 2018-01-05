@@ -4,7 +4,7 @@ from data.setup_dset import VOC_CLASSES as labelmap
 import json
 
 
-def parse_rec(filename):
+def _parse_rec(filename):
     """ Parse a PASCAL VOC xml file """
     tree = ET.parse(filename)
     objects = []
@@ -24,20 +24,20 @@ def parse_rec(filename):
     return objects
 
 
-def get_output_dir(name, phase):
-    # DEPRECATED
-    """Return the directory where experimental artifacts are placed.
-    If the directory does not exist, it is created.
-    A canonical path is built using the name from an imdb and a network
-    (if not None).
-    """
-    filedir = os.path.join(name, phase)
-    if not os.path.exists(filedir):
-        os.makedirs(filedir)
-    return filedir
+# def get_output_dir(name, phase):
+#     # DEPRECATED
+#     """Return the directory where experimental artifacts are placed.
+#     If the directory does not exist, it is created.
+#     A canonical path is built using the name from an imdb and a network
+#     (if not None).
+#     """
+#     filedir = os.path.join(name, phase)
+#     if not os.path.exists(filedir):
+#         os.makedirs(filedir)
+#     return filedir
 
 
-def get_voc_results_file_template(save_folder, image_set, cls):
+def _get_voc_results_file_template(save_folder, image_set, cls):
 
     filename = 'det_' + image_set + '_%s.txt' % (cls)
     filedir = os.path.join(save_folder, 'detection_per_cls')
@@ -48,7 +48,7 @@ def get_voc_results_file_template(save_folder, image_set, cls):
     return path
 
 
-def voc_eval(detpath, annopath, imagesetfile, classname,
+def _voc_eval(detpath, annopath, imagesetfile, classname,
              cachedir, ovthresh=0.5, use_07_metric=True):
     """
     Top level function that does the PASCAL VOC evaluation.
@@ -76,7 +76,7 @@ def voc_eval(detpath, annopath, imagesetfile, classname,
         # load annots
         recs = {}
         for i, imagename in enumerate(imagenames):
-            recs[imagename] = parse_rec(annopath % (imagename))
+            recs[imagename] = _parse_rec(annopath % (imagename))
             if i % 100 == 0:
                 print('Reading annotation for {:d}/{:d}'.format(
                    i + 1, len(imagenames)))
@@ -162,7 +162,7 @@ def voc_eval(detpath, annopath, imagesetfile, classname,
         # avoid divide by zero in case the first detection matches a difficult
         # ground truth
         prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-        ap = voc_ap(rec, prec, use_07_metric)
+        ap = _voc_ap(rec, prec, use_07_metric)
     else:
         rec = -1.
         prec = -1.
@@ -171,7 +171,7 @@ def voc_eval(detpath, annopath, imagesetfile, classname,
     return rec, prec, ap
 
 
-def voc_ap(rec, prec, use_07_metric=True):
+def _voc_ap(rec, prec, use_07_metric=True):
     """ ap = voc_ap(rec, prec, [use_07_metric])
     Compute VOC AP given precision and recall.
     If use_07_metric is true, uses the
@@ -209,7 +209,7 @@ def write_voc_results_file(save_folder, all_boxes, dataset):
     for cls_ind, cls in enumerate(labelmap):
         # print('Writing {:s} VOC results file'.format(cls))
         set_type = 'test'
-        filename = get_voc_results_file_template(save_folder, set_type, cls)
+        filename = _get_voc_results_file_template(save_folder, set_type, cls)
         with open(filename, 'wt') as f:
             for im_ind, index in enumerate(dataset.ids):
                 dets = all_boxes[cls_ind+1][im_ind]
@@ -247,8 +247,8 @@ def do_python_eval(opts):
     with open(log_file_name, 'a') as log_file:
         aps = []
         for i, cls in enumerate(labelmap):
-            filename = get_voc_results_file_template(save_folder, set_type, cls)
-            rec, prec, ap = voc_eval(
+            filename = _get_voc_results_file_template(save_folder, set_type, cls)
+            rec, prec, ap = _voc_eval(
                 filename, annopath, imgsetpath.format(set_type), cls, cachedir,
                 ovthresh=0.5, use_07_metric=use_07_metric)
             aps += [ap]
@@ -272,10 +272,14 @@ def do_python_eval(opts):
     # print('--------------------------------------------------------------')
 
 
+########### COCO ###########
+
 def _coco_results_one_category(dataset, boxes, cat_id):
     results = []
+    # len(dataset.ids) = 5000, the size of validation
+    # boxes[im_ind] is of size (num_instance_in_this_image x 5)
+
     for im_ind, index in enumerate(dataset.ids):
-        # dets = boxes[im_ind].astype(np.float)
         dets = np.array(boxes[im_ind], dtype=np.float)
         if len(dets) == 0:
             continue
@@ -284,32 +288,58 @@ def _coco_results_one_category(dataset, boxes, cat_id):
         ys = dets[:, 1]
         ws = dets[:, 2] - xs + 1
         hs = dets[:, 3] - ys + 1
-        results.extend(
-            [{'image_id': index,
-              'category_id': cat_id,
-              'bbox': [xs[k], ys[k], ws[k], hs[k]],
-              'score': scores[k]} for k in range(dets.shape[0])])
+        results.extend([{
+                            'image_id': index,
+                            'category_id': cat_id,
+                            'bbox': [xs[k], ys[k], ws[k], hs[k]],
+                            'score': scores[k]
+                        } for k in range(dets.shape[0])])       # k is the isntance number
     return results
 
 
-def write_coco_results_file(dataset, all_boxes, res_file):
+def write_coco_results_file(dataset, all_boxes, args):
     # [{"image_id": 42,
     #   "category_id": 18,
     #   "bbox": [258.15,41.29,348.26,243.78],
     #   "score": 0.236}, ...]
-    results = []
-    for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
-        if cls == '__background__':
-            continue
-        print('Collecting {} results ({:d}/{:d})'.format(cls, cls_ind, dataset.num_classes - 2))
-        coco_cat_id = dataset.COCO_CLASSES[cls_ind]
-        results.extend(_coco_results_one_category(dataset, all_boxes[cls_ind], coco_cat_id))
-    print('Writing results json to {}'.format(res_file))
-    with open(res_file, 'w') as fid:
-        json.dump(results, fid)
+
+    res_file = args.det_file[:-3] + 'json'
+    if os.path.isfile(res_file):
+        print_log('\nThe json file already exists ...\n', args.file_name)
+    else:
+        results = []
+        for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
+            if cls == '__background__':     # we don't have this case
+                continue
+            # print('Collecting {} results ({:d}/{:d})'.format(cls, cls_ind, dataset.num_classes - 2))
+            coco_cat_id = dataset.COCO_CLASSES[cls_ind]
+            results.extend(
+                _coco_results_one_category(dataset, all_boxes[cls_ind+1], coco_cat_id))
+
+        print_log('\nWriting results in json format to {} ...\n'.format(res_file), args.file_name)
+        with open(res_file, 'w') as fid:
+            json.dump(results, fid)
 
 
-def _print_detection_eval_metrics(dataset, coco_eval):
+def coco_do_detection_eval(dataset, args):
+
+    res_file = args.det_file[:-3] + 'json'
+    ann_type = 'bbox'
+    coco_dt = dataset.coco.loadRes(res_file)
+    from pycocotools.cocoeval import COCOeval
+    coco_eval = COCOeval(dataset.coco, coco_dt)
+    coco_eval.params.useSegm = (ann_type == 'segm')
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    _print_detection_eval_metrics(dataset, coco_eval, args)
+
+    # eval_file = os.path.join(args.save_folder, 'coco_det_eval_res.pkl')
+    # with open(eval_file, 'wb') as fid:
+    #     pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
+    # print_log('\nSaving coco_eval results to: {}'.format(eval_file), args.file_name)
+
+
+def _print_detection_eval_metrics(dataset, coco_eval, args):
     IoU_lo_thresh = 0.5
     IoU_hi_thresh = 0.95
 
@@ -327,32 +357,98 @@ def _print_detection_eval_metrics(dataset, coco_eval):
     # max dets index 2: 100 per image
     precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, :, 0, 2]
     ap_default = np.mean(precision[precision > -1])
-    print(('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] '
-           '~~~~').format(IoU_lo_thresh, IoU_hi_thresh))
-    print('{:.1f}'.format(100 * ap_default))
+    mAP = 100 * ap_default
+
+    print_log('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] ~~~~'.
+          format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
+    print_log('Mean AP: {:.2f}\n'.format(mAP), args.file_name)
+
     for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
         if cls == '__background__':
             continue
-        # minus 1 because of __background__
-        # update: we don't have minus 1 problem
-        # precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind - 1, 0, 2]
         precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
         ap = np.mean(precision[precision > -1])
-        print('{:.1f}'.format(100 * ap))
-    print('~~~~ Summary metrics ~~~~')
-    coco_eval.summarize()
+        print_log('{:s}:\t\t{:.2f}'.format(cls, 100 * ap), args.file_name)
+
+    print_log('\n~~~~ Summary metrics ~~~~', args.file_name)
+    # coco_eval.summarize()
+    coco_eval.stats = _summarize_only_to_log(coco_eval, args)
 
 
-def coco_do_detection_eval(dataset, res_file, output_dir):
-    ann_type = 'bbox'
-    coco_dt = dataset.coco.loadRes(res_file)
-    from pycocotools.cocoeval import COCOeval
-    coco_eval = COCOeval(dataset.coco, coco_dt)
-    coco_eval.params.useSegm = (ann_type == 'segm')
-    coco_eval.evaluate()
-    coco_eval.accumulate()
-    _print_detection_eval_metrics(dataset, coco_eval)
-    eval_file = os.path.join(output_dir, 'coco_det_eval_res.pkl')
-    with open(eval_file, 'wb') as fid:
-        pickle.dump(coco_eval, fid, pickle.HIGHEST_PROTOCOL)
-    print('Wrote COCO eval results to: {}'.format(eval_file))
+def _summarize_only_to_log(api, args):
+    """
+        Note by hyli: only to log in the file when printing. Exactly the same as official.
+        'cocoeval.py'
+    """
+    def _summarize(ap=1, iouThr=None, areaRng='all', maxDets=100):
+        p = api.params
+        iStr = ' {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}'
+        titleStr = 'Average Precision' if ap == 1 else 'Average Recall'
+        typeStr = '(AP)' if ap==1 else '(AR)'
+        iouStr = '{:0.2f}:{:0.2f}'.format(p.iouThrs[0], p.iouThrs[-1]) \
+            if iouThr is None else '{:0.2f}'.format(iouThr)
+
+        aind = [i for i, aRng in enumerate(p.areaRngLbl) if aRng == areaRng]
+        mind = [i for i, mDet in enumerate(p.maxDets) if mDet == maxDets]
+        if ap == 1:
+            # dimension of precision: [TxRxKxAxM]
+            s = api.eval['precision']
+            # IoU
+            if iouThr is not None:
+                t = np.where(iouThr == p.iouThrs)[0]
+                s = s[t]
+            s = s[:,:,:,aind,mind]
+        else:
+            # dimension of recall: [TxKxAxM]
+            s = api.eval['recall']
+            if iouThr is not None:
+                t = np.where(iouThr == p.iouThrs)[0]
+                s = s[t]
+            s = s[:,:,aind,mind]
+        if len(s[s>-1])==0:
+            mean_s = -1
+        else:
+            mean_s = np.mean(s[s>-1])
+        print_log(
+            iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s),
+            args.file_name)
+        return mean_s
+
+    def _summarizeDets():
+        stats = np.zeros((12,))
+        stats[0] = _summarize(1)
+        stats[1] = _summarize(1, iouThr=.5, maxDets=api.params.maxDets[2])
+        stats[2] = _summarize(1, iouThr=.75, maxDets=api.params.maxDets[2])
+        stats[3] = _summarize(1, areaRng='small', maxDets=api.params.maxDets[2])
+        stats[4] = _summarize(1, areaRng='medium', maxDets=api.params.maxDets[2])
+        stats[5] = _summarize(1, areaRng='large', maxDets=api.params.maxDets[2])
+        stats[6] = _summarize(0, maxDets=api.params.maxDets[0])
+        stats[7] = _summarize(0, maxDets=api.params.maxDets[1])
+        stats[8] = _summarize(0, maxDets=api.params.maxDets[2])
+        stats[9] = _summarize(0, areaRng='small', maxDets=api.params.maxDets[2])
+        stats[10] = _summarize(0, areaRng='medium', maxDets=api.params.maxDets[2])
+        stats[11] = _summarize(0, areaRng='large', maxDets=api.params.maxDets[2])
+        return stats
+
+    def _summarizeKps():
+        stats = np.zeros((10,))
+        stats[0] = _summarize(1, maxDets=20)
+        stats[1] = _summarize(1, maxDets=20, iouThr=.5)
+        stats[2] = _summarize(1, maxDets=20, iouThr=.75)
+        stats[3] = _summarize(1, maxDets=20, areaRng='medium')
+        stats[4] = _summarize(1, maxDets=20, areaRng='large')
+        stats[5] = _summarize(0, maxDets=20)
+        stats[6] = _summarize(0, maxDets=20, iouThr=.5)
+        stats[7] = _summarize(0, maxDets=20, iouThr=.75)
+        stats[8] = _summarize(0, maxDets=20, areaRng='medium')
+        stats[9] = _summarize(0, maxDets=20, areaRng='large')
+        return stats
+    if not api.eval:
+        raise Exception('Please run accumulate() first')
+    iouType = api.params.iouType
+    if iouType == 'segm' or iouType == 'bbox':
+        summarize = _summarizeDets
+    elif iouType == 'keypoints':
+        summarize = _summarizeKps
+
+    return summarize()

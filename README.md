@@ -28,8 +28,9 @@ Many thanks to the original author [@Max](https://github.com/amdegroot)!
 ## Installation
 - Install [PyTorch](http://pytorch.org/), clone this repository, etc.
 - Please follow the instructions in the [original](https://github.com/amdegroot/ssd.pytorch#installation) forked version.
-- We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process. Install it: `pip install visdom`
-There is a tutorial on how to use it.
+- We use [wisdom](https://github.com/facebookresearch/visdom) to visualize results and training process.
+Install it: `pip install visdom`.
+There is a [tutorial](TODO) on how to use it.
 - (Optional, buggy now) install `plotly`: `conda install -c plotly plotly`
 - For now, some image processing uses `cv2`, to install it with conda, follow [here](https://anaconda.org/conda-forge/opencv).
 
@@ -56,8 +57,9 @@ make
 sudo make install
 sudo python setup.py install
 ```
+Then you can  `from pycocotools.cocoeval import COCOeval`.
 
-## Train
+## Training SSD
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:
 https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 - By default, we assume you have downloaded the file in the `data/pretrain` dir:
@@ -83,7 +85,7 @@ python train.py
   * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train.py` for options)
 -->
 
-## Test
+## Testing SSD
 To evaluate a trained network:
 
 ```Shell
@@ -96,18 +98,15 @@ You can specify the parameters listed in the `option/test_opt.py` file by flaggi
 #TODO in the following
 ## Performance
 
-### VOC2007 Test
 
-#### mAP
 
-#### FPS
-**GTX 1060:** ~45.45 FPS 
+## Grab and Go
 
-## Demo (Grab and Go)
+(The following instructions are from the forked version)
 
 ### Use a pre-trained SSD network for detection
 
-#### Download a pre-trained network
+Download a pre-trained network:
 - We are trying to provide PyTorch `state_dicts` (dict of weight tensors) of the latest SSD model definitions trained on different datasets.  
 - Currently, we provide the following PyTorch models: 
     * SSD300 v2 trained on VOC0712 (newest PyTorch version)
@@ -116,27 +115,12 @@ You can specify the parameters listed in the `option/test_opt.py` file by flaggi
       - https://s3.amazonaws.com/amdegroot-models/ssd_300_VOC0712.pth
     * SSD300 v1 (original/old pool6 version) trained on VOC07
       - https://s3.amazonaws.com/amdegroot-models/ssd_300_voc07.tar.gz
-- Our goal is to reproduce this table from the [original paper](http://arxiv.org/abs/1512.02325) 
+- Our goal is to reproduce this table from the [original paper](http://arxiv.org/abs/1512.02325):
 <p align="left">
-<img src="http://www.cs.unc.edu/~wliu/papers/ssd_results.png" alt="SSD results on multiple datasets" width="800px"></p>
+<img src="http://www.cs.unc.edu/~wliu/papers/ssd_results.png" alt="SSD results on multiple datasets" width="600px"></p>
 
 ### Try the demo notebook
 - Make sure you have [jupyter notebook](http://jupyter.readthedocs.io/en/latest/install.html) installed.
-- Two alternatives for installing jupyter notebook:
-    1. If you installed PyTorch with [conda](https://www.continuum.io/downloads) (recommended), then you should already have it.  (Just  navigate to the ssd.pytorch cloned repo and run): 
-    `jupyter notebook` 
-
-    2. If using [pip](https://pypi.python.org/pypi/pip):
-    
-```Shell
-# make sure pip is upgraded
-pip3 install --upgrade pip
-# install jupyter notebook
-pip install jupyter
-# Run this inside ssd.pytorch
-jupyter notebook
-```
-
 - Now navigate to `demo/demo.ipynb` at http://localhost:8888 (by default) and have at it!
 
 ### Try the webcam demo
@@ -148,7 +132,6 @@ jupyter notebook
 - Running `python -m demo.live` opens the webcam and begins detecting!
 
 ## TODO
-We have accumulated the following to-do list, which you can expect to be done in the very near future
 - Still to come:
   * Train SSD300 with batch norm
   * Add support for SSD512 training and testing
