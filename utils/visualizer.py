@@ -21,6 +21,7 @@ class Visualizer(object):
             self.dis_win_id_im, self.dis_im_cnt, self.dis_im_cycle = 300, 0, 4
             self.loss_data = {'X': [], 'Y': [], 'legend': ['total_loss', 'loss_c', 'loss_l']}
             # for visualization
+            # TODO: visualize in the training process
             self.num_classes = dataset.num_classes
             self.class_name = dataset.COCO_CLASSES_names
             self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()

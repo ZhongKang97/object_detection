@@ -31,7 +31,7 @@ optimizer = set_optimizer(ssd_net, args)
 criterion = MultiBoxLoss(dataset.num_classes, 0.5, True,
                          0, True, 3, 0.5, False, args.use_cuda)
 # init visualizer
-visual = Visualizer(args)
+visual = Visualizer(args, dataset)
 
 
 epoch_size = len(dataset) // args.batch_size
