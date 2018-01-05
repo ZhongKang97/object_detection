@@ -361,7 +361,7 @@ def _print_detection_eval_metrics(dataset, coco_eval, args):
 
     print_log('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] ~~~~'.
           format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
-    print_log('[{:s}][{:s}]\tMean AP: {:.2f}\n'.format(
+    print_log('[{:s}][{:s}]\nMean AP: {:.2f}\n'.format(
         args.experiment_name,
         os.path.basename(os.path.dirname(args.det_file)), mAP,
     ), args.file_name)
@@ -388,7 +388,7 @@ def _summarize_only_to_log(api, args):
     """
     def _summarize(ap=1, iouThr=None, areaRng='all', maxDets=100):
         p = api.params
-        iStr = ' {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}'
+        iStr = ' {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.2f}'
         titleStr = 'Average Precision' if ap == 1 else 'Average Recall'
         typeStr = '(AP)' if ap==1 else '(AR)'
         iouStr = '{:0.2f}:{:0.2f}'.format(p.iouThrs[0], p.iouThrs[-1]) \
@@ -416,7 +416,7 @@ def _summarize_only_to_log(api, args):
         else:
             mean_s = np.mean(s[s>-1])
         print_log(
-            iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s),
+            iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s*100),
             args.file_name)
         return mean_s
 
