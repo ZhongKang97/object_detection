@@ -3,10 +3,10 @@ from torch.autograd import Variable
 
 import torch.utils.data as data
 from data import detection_collate
-from layers.modules import MultiBoxLoss
+from layers.modules.multibox_loss import MultiBoxLoss
 
 from data.create_dset import create_dataset
-from ssd import build_ssd           # this is a function
+from layers.ssd import build_ssd           # this is a function
 from option.train_opt import TrainOptions
 from utils.train import *
 from utils.visualizer import Visualizer
