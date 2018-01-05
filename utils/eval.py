@@ -361,16 +361,22 @@ def _print_detection_eval_metrics(dataset, coco_eval, args):
 
     print_log('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] ~~~~'.
           format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
-    print_log('Mean AP: {:.2f}\n'.format(mAP), args.file_name)
+    print_log('[{:s}][{:s}]\tMean AP: {:.2f}\n'.format(
+        mAP, args.experiment_name,
+        os.path.basename(os.path.dirname(args.det_file))
+    ), args.file_name)
 
     for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
         if cls == '__background__':
             continue
         precision = coco_eval.eval['precision'][ind_lo:(ind_hi + 1), :, cls_ind, 0, 2]
         ap = np.mean(precision[precision > -1])
-        print_log('{:s}:\t\t{:.2f}'.format(cls, 100 * ap), args.file_name)
+        print_log('{:s}:\t\t\t\t{:.2f}'.format(cls, 100 * ap), args.file_name)
 
-    print_log('\n~~~~ Summary metrics ~~~~', args.file_name)
+    print_log('\n~~~~ Summary metrics ~~~~\n[{:s}][{:s}]'.format(
+        args.experiment_name,
+        os.path.basename(os.path.dirname(args.det_file))
+    ), args.file_name)
     # coco_eval.summarize()
     coco_eval.stats = _summarize_only_to_log(coco_eval, args)
 
