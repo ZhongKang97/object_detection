@@ -105,7 +105,7 @@ class Visualizer(object):
                            opts={
                                'title': 'subfolder: {:s}, name: {:s}'.format(
                                    os.path.basename(self.opt.save_folder), im_name),
-                               'height': 350,
+                               'height': 320,
                                'width': 400,
                            })
             self.dis_im_cnt += 1
