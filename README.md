@@ -95,10 +95,10 @@ You can specify the parameters listed in the `option/test_opt.py` file by flaggi
 
 
 
-#TODO in the following
 ## Performance
 
-
+For COCO, please refer to the origion
+implementation and [parameter settings](https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_coco.py) of SSD.
 
 ## Grab and Go
 
