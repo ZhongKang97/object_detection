@@ -45,7 +45,8 @@ def build_ssd(opts, num_classes):
     if phase == 'train':
         model.train()
         # init the network
-        model, start_epoch, start_iter = set_model_weight_train(model, opts)
+        model, start_epoch, start_iter = \
+            set_model_weight_train(model, opts)
         # model.load_weight_new()
         if opts.debug_mode:
             print(model)
