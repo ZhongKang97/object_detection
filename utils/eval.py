@@ -363,7 +363,7 @@ def _print_detection_eval_metrics(dataset, coco_eval, args):
           format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
     print_log('[{:s}][{:s}]\tMean AP: {:.2f}\n'.format(
         args.experiment_name,
-        os.path.basename(os.path.dirname(args.det_file), mAP)
+        os.path.basename(os.path.dirname(args.det_file)), mAP,
     ), args.file_name)
 
     for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
