@@ -48,14 +48,14 @@ for epoch in range(args.start_epoch, args.max_epoch):
         else:
             prefix = 'init'
 
-        print_log('\n{:s} learning rate {:f} at epoch {:d}, iter {:d}\n'.format(
+        print_log('\n{:s} learning rate {:8f} at epoch {:d}, iter {:d}\n'.format(
             prefix, old_lr, epoch, args.start_iter), args.file_name)
         start_iter = args.start_iter
     else:
         start_iter = 0
 
     if old_lr != new_lr:
-        print_log('\nchange learning rate from {:f} to {:f} at epoch {:d}\n'.format(
+        print_log('\nchange learning rate from {:8f} to {:8f} at epoch {:d}\n'.format(
             old_lr, new_lr, epoch), args.file_name)
 
     cnt = 0  # verbose
