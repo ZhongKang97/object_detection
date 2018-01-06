@@ -3,10 +3,10 @@ from torch.autograd import Variable
 
 import torch.utils.data as data
 from data import detection_collate
-from layers.modules import MultiBoxLoss
+from layers.modules.multibox_loss import MultiBoxLoss
 
 from data.create_dset import create_dataset
-from ssd import build_ssd           # this is a function
+from layers.ssd import build_ssd           # this is a function
 from option.train_opt import TrainOptions
 from utils.train import *
 from utils.visualizer import Visualizer
@@ -31,7 +31,7 @@ optimizer = set_optimizer(ssd_net, args)
 criterion = MultiBoxLoss(dataset.num_classes, 0.5, True,
                          0, True, 3, 0.5, False, args.use_cuda)
 # init visualizer
-visual = Visualizer(args)
+visual = Visualizer(args, dataset)
 
 
 epoch_size = len(dataset) // args.batch_size
@@ -43,16 +43,22 @@ for epoch in range(args.start_epoch, args.max_epoch):
     adjust_learning_rate(optimizer, epoch, args)
     new_lr = optimizer.param_groups[0]['lr']
     if epoch == args.start_epoch:  # only execute once
-        print_log('\ninit learning rate {:f} at epoch {:d}, iter {:d}\n'.format(
-            old_lr, epoch, args.start_iter), args.file_name)
+        if args.resume is not None:
+            old_lr, prefix = new_lr, 'resume'
+        else:
+            prefix = 'init'
+
+        print_log('\n{:s} learning rate {:8f} at epoch {:d}, iter {:d}\n'.format(
+            prefix, old_lr, epoch, args.start_iter), args.file_name)
         start_iter = args.start_iter
     else:
         start_iter = 0
+
     if old_lr != new_lr:
-        print_log('\nchange learning rate from {:f} to {:f} at epoch {:d}\n'.format(
+        print_log('\nchange learning rate from {:8f} to {:8f} at epoch {:d}\n'.format(
             old_lr, new_lr, epoch), args.file_name)
 
-    cnt = 0
+    cnt = 0  # verbose
     for iter_ind in range(start_iter, epoch_size):
 
         # load train data

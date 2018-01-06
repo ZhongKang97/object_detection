@@ -3,26 +3,11 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from utils.train import *
-from layers import *
 from option.config import *
-
-base = {
-    '300': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '512': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-    '634': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'C', 512, 512, 512, 'M',
-            512, 512, 512],
-}
-extras = {
-    '300': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-    '512': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-    '634': [256, 'S', 512, 128, 'S', 256, 128, 256, 128, 256],
-}
-mbox = {
-    'original':     [4, 6, 6, 6, 4, 4],  # number of boxes per feature map location
-    'more_ar':      [6, 6, 6, 6, 6, 6],
-}
+from .models.models import *
+from .modules.prior_box import PriorBox
+from .modules.l2norm import L2Norm
+from .detection import Detect
 
 
 def build_ssd(opts, num_classes):
@@ -37,7 +22,8 @@ def build_ssd(opts, num_classes):
 
     vgg_layers = vgg(base[str(size)], 3)
     extra_layers = add_extras(extras[str(size)], 1024)
-    mbox_setting = mbox['more_ar'] if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
+    mbox_setting = mbox['more_ar'] \
+        if opts.prior_config == 'v2_512_stan_more_ar' or opts.prior_config == 'v2_634' \
         else mbox['original']
     model = SSD(opts, phase, num_classes,
                 *multibox(vgg_layers, extra_layers, mbox_setting, num_classes))
@@ -45,7 +31,8 @@ def build_ssd(opts, num_classes):
     if phase == 'train':
         model.train()
         # init the network
-        model, start_epoch, start_iter = set_model_weight_train(model, opts)
+        model, start_epoch, start_iter = \
+            set_model_weight_train(model, opts)
         # model.load_weight_new()
         if opts.debug_mode:
             print(model)
@@ -97,23 +84,7 @@ class SSD(nn.Module):
         self.opts = opts
         self.phase = phase
         self.num_classes = num_classes
-
-        # TODO: implement __call__ in PriorBox, by the original author
-        # init the priors (anchors) based on config
-        if opts.prior_config == 'v2':
-            self.priorbox = PriorBox(v2, opts.ssd_dim)
-        elif opts.prior_config == 'v3':
-            self.priorbox = PriorBox(v3, opts.ssd_dim)
-        elif opts.prior_config == 'v2_512':
-            self.priorbox = PriorBox(v2_512, opts.ssd_dim)
-        elif opts.prior_config == 'v2_512_standard':
-            self.priorbox = PriorBox(v2_512_standard, opts.ssd_dim)
-        elif opts.prior_config == 'v2_512_stan_more_ar':
-            self.priorbox = PriorBox(v2_512_stan_more_ar, opts.ssd_dim)
-        elif opts.prior_config == 'v2_634':
-            self.priorbox = PriorBox(v2_634, opts.ssd_dim)
-        elif opts.prior_config == 'v2_634_standard':
-            self.priorbox = PriorBox(v2_634_standard, opts.ssd_dim)
+        self.priorbox = PriorBox(opts.prior_config, opts.ssd_dim)
 
         # for ssd300, priors: [8732 x 4] boxes/anchors
         self.priors = Variable(self.priorbox.forward(), volatile=True)
@@ -198,62 +169,7 @@ class SSD(nn.Module):
         return output
 
 
-# This function is derived from torchvision VGG make_layers()
-# https://github.com/pytorch/vision/blob/master/torchvision/models/vgg.py
-def vgg(cfg, i, batch_norm=False):
-    layers = []
-    in_channels = i
-    for v in cfg:
-        if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
-        elif v == 'C':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=True)]
-        else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-            if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
-            else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
-            in_channels = v
 
-    pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
-    conv6 = nn.Conv2d(512, 1024, kernel_size=3, padding=6, dilation=6)
-    conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
-    layers += [pool5, conv6,
-               nn.ReLU(inplace=True), conv7, nn.ReLU(inplace=True)]
-    return layers
-
-
-def add_extras(cfg, i, batch_norm=False):
-    # Extra layers added to VGG for feature scaling
-    layers = []
-    in_channels = i
-    flag = False
-    for k, v in enumerate(cfg):
-        if in_channels != 'S':
-            if v == 'S':
-                layers += [nn.Conv2d(in_channels, cfg[k + 1],
-                           kernel_size=(1, 3)[flag], stride=2, padding=1)]
-            else:
-                layers += [nn.Conv2d(in_channels, v, kernel_size=(1, 3)[flag])]
-            flag = not flag
-        in_channels = v
-    return layers
-
-
-def multibox(vgg, extra_layers, cfg, num_classes):
-    loc_layers = []
-    conf_layers = []
-    vgg_source = [24, -2]
-    for k, v in enumerate(vgg_source):
-        loc_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
-        conf_layers += [nn.Conv2d(vgg[v].out_channels, cfg[k] * num_classes, kernel_size=3, padding=1)]
-
-    for k, v in enumerate(extra_layers[1::2], 2):
-        loc_layers += [nn.Conv2d(v.out_channels, cfg[k] * 4, kernel_size=3, padding=1)]
-        conf_layers += [nn.Conv2d(v.out_channels, cfg[k] * num_classes, kernel_size=3, padding=1)]
-
-    return vgg, extra_layers, (loc_layers, conf_layers)
 
 
 

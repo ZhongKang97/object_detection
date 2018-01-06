@@ -1,10 +1,13 @@
 from .base_opt import BaseOptions
+from utils.util import *
 
 
 class TrainOptions(BaseOptions):
     def __init__(self):
 
         BaseOptions.initialize(self)
+
+        self.parser.add_argument('--debug_mode', default=True, type=str2bool)
 
         self.parser.add_argument('--lr', default=0.0001, type=float, help='initial learning rate')
         self.parser.add_argument('--scheduler', default=None, help='plateau, multi_step')
