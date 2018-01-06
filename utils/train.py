@@ -71,6 +71,7 @@ def set_model_weight_train(model, opts):
             start_iter = checkpoint['iter']
         else:
             print("=> no checkpoint found at '{}'".format(opts.resume))
+            exit()
     else:
         if opts.no_pretrain:
             print('Train from scratch...')

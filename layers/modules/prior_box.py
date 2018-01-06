@@ -1,6 +1,25 @@
 import torch
 from math import sqrt as sqrt
 from itertools import product as product
+from option.config import *
+
+
+def choose_var(name):
+    if name == 'v2':
+        var = v2
+    elif name == 'v3':
+        var = v3
+    elif name == 'v2_512':
+        var = v2_512
+    elif name == 'v2_512_standard':
+        var = v2_512_standard
+    elif name == 'v2_512_stan_more_ar':
+        var = v2_512_stan_more_ar
+    elif name == 'v2_634':
+        var = v2_634
+    elif name == 'v2_634_standard':
+        var = v2_634_standard
+    return var
 
 
 class PriorBox(object):
@@ -11,8 +30,10 @@ class PriorBox(object):
     paper, so we include both versions, but note v2 is the most tested and most
     recent version of the paper.
     """
-    def __init__(self, cfg, ssd_dim):
+    def __init__(self, cfg_name, ssd_dim):
         super(PriorBox, self).__init__()
+
+        cfg = choose_var(cfg_name)
 
         if cfg['name'] == 'v2' or cfg['name'] == 'v3':
             self.feature_maps = cfg['feature_maps'][str(ssd_dim)]

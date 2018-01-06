@@ -21,9 +21,11 @@ class Visualizer(object):
             self.dis_win_id_im, self.dis_im_cnt, self.dis_im_cycle = 300, 0, 4
             self.loss_data = {'X': [], 'Y': [], 'legend': ['total_loss', 'loss_c', 'loss_l']}
             # for visualization
+            # TODO: visualize in the training process
             self.num_classes = dataset.num_classes
             self.class_name = dataset.COCO_CLASSES_names
             self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()
+            # for both train and test
             self.save_det_res_path = os.path.join(self.opt.save_folder, 'det_result')
             mkdirs(self.save_det_res_path)
 
@@ -105,7 +107,7 @@ class Visualizer(object):
                            opts={
                                'title': 'subfolder: {:s}, name: {:s}'.format(
                                    os.path.basename(self.opt.save_folder), im_name),
-                               'height': 350,
+                               'height': 320,
                                'width': 400,
                            })
             self.dis_im_cnt += 1
@@ -113,6 +115,7 @@ class Visualizer(object):
     def _show_detection_result(self, im, results, im_name):
 
         plt.figure()
+        plt.axis('off')     # TODO, still the axis remains
         plt.imshow(im)
         currentAxis = plt.gca()
 
@@ -137,7 +140,7 @@ class Visualizer(object):
                     else:
                         break
         result_file = '{:s}/{:s}.png'.format(self.save_det_res_path, im_name[:-4])
-        plt.axis('off')
+
         plt.savefig(result_file, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close()
         # ref: https://github.com/facebookresearch/visdom/issues/119

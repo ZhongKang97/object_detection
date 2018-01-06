@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Function
-from torch.autograd import Variable
 import torch.nn.init as init
 
 
@@ -15,7 +13,7 @@ class L2Norm(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        init.constant(self.weight,self.gamma)
+        init.constant(self.weight, self.gamma)
 
     def forward(self, x):
         norm = x.pow(2).sum(dim=1, keepdim=True).sqrt()+self.eps

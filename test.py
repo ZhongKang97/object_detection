@@ -2,7 +2,7 @@ from __future__ import print_function
 from torch.autograd import Variable
 
 from data.create_dset import create_dataset
-from ssd import build_ssd
+from layers.ssd import build_ssd
 from option.test_opt import TestOptions
 from utils.eval import *
 from utils.visualizer import Visualizer
@@ -23,7 +23,8 @@ visual = Visualizer(args, dataset)
 #    all_boxes[cls][image] = N x 5 array of detections in
 #    (x1, y1, x2, y2, score)
 if os.path.isfile(args.det_file):
-    print('Raw boxes exist! skip prediction and directly evaluate!...')
+    print_log('\nRaw boxes exist! skip prediction and directly evaluate!',
+              args.file_name)
     all_boxes = pickle.load(open(args.det_file, 'rb'))
 else:
     ssd_net = build_ssd(args, dataset.num_classes)
@@ -67,11 +68,19 @@ else:
     with open(args.det_file, 'wb') as f:
         pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
-print('Evaluating detection results ...')
+# # debug
+# debug_all_boxes = [[[] for _ in range(20)] for _ in range(dataset.num_classes)]
+# for i in range(20):
+#     for j in range(dataset.num_classes):
+#         debug_all_boxes[j][i] = all_boxes[j][i]
+# all_boxes = debug_all_boxes
+
+print_log('\nEvaluating detection results ...', args.file_name)
 if dataset.name == 'COCO':
-    res_file = args.det_file[:-3] + 'json'
-    write_coco_results_file(dataset, all_boxes, res_file)
-    coco_do_detection_eval(dataset, res_file, args.save_folder)
+    write_coco_results_file(dataset, all_boxes, args)
+    coco_do_detection_eval(dataset, args)
 else:
     write_voc_results_file(args.save_folder, all_boxes, dataset)
     do_python_eval(args)
+
+print_log('\nHurray! Testing done!', args.file_name)

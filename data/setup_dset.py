@@ -283,7 +283,10 @@ class COCODetection(data.Dataset):
         img = cv2.imread(os.path.join(self.im_path, path))
         if img is None:
             img = cv2.imread(os.path.join(self.im_path_2, path))
-        origin_im = imread(os.path.join(self.im_path, path))
+        try:
+            origin_im = imread(os.path.join(self.im_path, path))
+        except FileNotFoundError:
+            origin_im = imread(os.path.join(self.im_path_2, path))
         height, width, _ = img.shape
 
         if self.target_transform is not None:
