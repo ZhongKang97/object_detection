@@ -10,7 +10,6 @@ data/fmnist
 *.tar.gz
 *.*~
 *.swp
-*.txt
 *.pth
 *.mat
 !doc/*
