@@ -1,0 +1,27 @@
+Experiment: ssd_rerun
+------------ Test Options -----------------
+base_save_folder: result
+conf_thresh: 0.05
+dataset: coco
+debug_mode: True
+det_file: result/ssd_rerun/test/ssd512_COCO_epoch_20_iter_29570/detections_all_boxes.pkl
+experiment_name: ssd_rerun
+file_name: result/ssd_rerun/test/ssd512_COCO_epoch_20_iter_29570/opt_test.txt
+manual_seed: -1
+nms_thresh: 0.5
+no_visdom: False
+num_workers: 2
+phase: test
+port_id: 8090
+prior_config: v2_512
+random_seed: 3154
+save_folder: result/ssd_rerun/test/ssd512_COCO_epoch_20_iter_29570
+show_freq: 50
+soft_nms: -1
+ssd_dim: 512
+subname: 
+top_k: 300
+trained_model: result/ssd_rerun/train/ssd512_COCO_epoch_20_iter_29570.pth
+use_cuda: False
+visualize_thres: 0.2
+------------------ End --------------------
