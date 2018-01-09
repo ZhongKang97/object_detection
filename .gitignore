@@ -5,7 +5,6 @@ data/cifar-100-python
 data/fmnist
 result/*/test/detection_per_cls/*
 result/*/test/*/detection_per_cls/*
-
 *.png
 *.json
 *.pkl
