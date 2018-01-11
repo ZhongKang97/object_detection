@@ -1,0 +1,32 @@
+------------ Options -------------
+basenet: vgg16_reducedfc.pth
+batch_size: 32
+cuda: True
+debug: False
+deploy: True
+display_id: 1
+experiment_name: renew_300_set1
+gamma: 0.1
+jaccard_threshold: 0.5
+lr: 0.0001
+max_iter: 82000
+momentum: 0.9
+no_pretrain: False
+num_workers: 2
+phase: train
+port_id: 8097
+prior_config: v3
+resume: None
+save_folder: result/renew_300_set1/train
+schedule: [80000, 100000, 120000]
+send_images_to_visdom: False
+ssd_dim: 300
+start_iter: 0
+version: v2
+visdom: False
+voc_root: /home/hongyang/data/VOCdevkit/
+weight_decay: 0.0005
+-------------- End ----------------
+================ Training Loss (Fri Sep 15 11:39:44 2017) ================
+[renew_300_set1]	iter 0 || Loss: 26.6279 || time: 20.3163 sec/iter
+[renew_300_set1]	iter 50 || Loss: 13.8147 || time: 0.2118 sec/iter

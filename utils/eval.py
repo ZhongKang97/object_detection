@@ -1,6 +1,9 @@
 import pickle
 from .util import *
-from ..data.setup_dset import VOC_CLASSES as labelmap
+try:
+    from data.setup_dset import VOC_CLASSES as labelmap
+except ModuleNotFoundError:
+    pass
 import json
 
 

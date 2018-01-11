@@ -1,0 +1,101 @@
+------------ Options -------------
+basenet: vgg16_reducedfc.pth
+batch_size: 10
+cuda: True
+debug: True
+deploy: False
+display_id: 1
+experiment_name: renew_634
+gamma: 0.5
+jaccard_threshold: 0.5
+lr: 0.001
+max_iter: 100000
+momentum: 0.9
+no_pretrain: False
+num_workers: 2
+phase: train
+port_id: 8097
+prior_config: v2_634
+resume: None
+save_folder: result/renew_634/train
+schedule: [60000, 80000, 90000]
+send_images_to_visdom: False
+ssd_dim: 634
+start_iter: 0
+version: v2
+visdom: False
+voc_root: /home/hongyang/data/VOCdevkit/
+weight_decay: 0.0005
+-------------- End ----------------
+================ Training Loss (Sun Sep 17 16:01:39 2017) ================
+[renew_634]	iter 0 || Loss: 26.8001 || time: 0.8863 sec/iter
+[renew_634]	iter 1 || Loss: 24.6689 || time: 0.5101 sec/iter
+[renew_634]	iter 2 || Loss: 22.6282 || time: 0.5212 sec/iter
+[renew_634]	iter 3 || Loss: 20.4283 || time: 0.5248 sec/iter
+[renew_634]	iter 4 || Loss: 18.9305 || time: 0.5214 sec/iter
+[renew_634]	iter 5 || Loss: 17.3752 || time: 0.5225 sec/iter
+[renew_634]	iter 6 || Loss: 17.0132 || time: 0.5115 sec/iter
+[renew_634]	iter 7 || Loss: 16.5596 || time: 0.5254 sec/iter
+[renew_634]	iter 8 || Loss: 16.8627 || time: 0.5248 sec/iter
+[renew_634]	iter 9 || Loss: 15.4197 || time: 0.5075 sec/iter
+[renew_634]	iter 10 || Loss: 15.6091 || time: 0.5253 sec/iter
+[renew_634]	iter 11 || Loss: 15.3009 || time: 0.5194 sec/iter
+[renew_634]	iter 12 || Loss: 16.2265 || time: 0.5156 sec/iter
+[renew_634]	iter 13 || Loss: 14.9523 || time: 0.5211 sec/iter
+[renew_634]	iter 14 || Loss: 14.5920 || time: 0.5240 sec/iter
+[renew_634]	iter 15 || Loss: 15.8040 || time: 0.5282 sec/iter
+[renew_634]	iter 16 || Loss: 15.7324 || time: 0.5084 sec/iter
+[renew_634]	iter 17 || Loss: 17.0717 || time: 0.5475 sec/iter
+[renew_634]	iter 18 || Loss: 15.2959 || time: 0.5672 sec/iter
+[renew_634]	iter 19 || Loss: 15.7354 || time: 0.5547 sec/iter
+[renew_634]	iter 20 || Loss: 15.5529 || time: 0.5494 sec/iter
+[renew_634]	iter 21 || Loss: 15.2026 || time: 0.5405 sec/iter
+[renew_634]	iter 22 || Loss: 16.1306 || time: 0.5519 sec/iter
+[renew_634]	iter 23 || Loss: 14.7277 || time: 0.5567 sec/iter
+[renew_634]	iter 24 || Loss: 15.3630 || time: 0.5540 sec/iter
+[renew_634]	iter 25 || Loss: 15.5362 || time: 0.5451 sec/iter
+[renew_634]	iter 26 || Loss: 17.0137 || time: 0.5472 sec/iter
+[renew_634]	iter 27 || Loss: 16.7042 || time: 0.5517 sec/iter
+[renew_634]	iter 28 || Loss: 16.6333 || time: 0.5514 sec/iter
+[renew_634]	iter 29 || Loss: 16.7951 || time: 0.5579 sec/iter
+[renew_634]	iter 30 || Loss: 16.4912 || time: 0.5603 sec/iter
+[renew_634]	iter 31 || Loss: 16.0306 || time: 0.5402 sec/iter
+[renew_634]	iter 32 || Loss: 19.5023 || time: 0.5486 sec/iter
+[renew_634]	iter 33 || Loss: 16.6979 || time: 0.5524 sec/iter
+[renew_634]	iter 34 || Loss: 16.8516 || time: 0.5560 sec/iter
+[renew_634]	iter 35 || Loss: 17.3036 || time: 0.5608 sec/iter
+[renew_634]	iter 36 || Loss: 26.7880 || time: 0.5403 sec/iter
+[renew_634]	iter 37 || Loss: 20.0062 || time: 0.5445 sec/iter
+[renew_634]	iter 38 || Loss: 17.9504 || time: 0.5546 sec/iter
+[renew_634]	iter 39 || Loss: 21.3212 || time: 0.5627 sec/iter
+[renew_634]	iter 40 || Loss: 20.2967 || time: 0.5469 sec/iter
+[renew_634]	iter 41 || Loss: 20.6778 || time: 0.5401 sec/iter
+[renew_634]	iter 42 || Loss: 18.9653 || time: 0.5543 sec/iter
+[renew_634]	iter 43 || Loss: 14.6270 || time: 0.5513 sec/iter
+[renew_634]	iter 44 || Loss: 13.5926 || time: 0.5428 sec/iter
+[renew_634]	iter 45 || Loss: 12.5247 || time: 0.5443 sec/iter
+[renew_634]	iter 46 || Loss: 14.8673 || time: 0.5424 sec/iter
+[renew_634]	iter 47 || Loss: 14.2108 || time: 0.5592 sec/iter
+[renew_634]	iter 48 || Loss: 15.4800 || time: 0.5506 sec/iter
+[renew_634]	iter 49 || Loss: 13.7121 || time: 0.5603 sec/iter
+[renew_634]	iter 50 || Loss: 11.7134 || time: 0.5572 sec/iter
+[renew_634]	iter 51 || Loss: 12.1959 || time: 0.5415 sec/iter
+[renew_634]	iter 52 || Loss: 12.6146 || time: 0.5536 sec/iter
+[renew_634]	iter 53 || Loss: 14.1431 || time: 0.5579 sec/iter
+[renew_634]	iter 54 || Loss: 16.4317 || time: 0.5538 sec/iter
+[renew_634]	iter 55 || Loss: 13.7961 || time: 0.5521 sec/iter
+[renew_634]	iter 56 || Loss: 16.0446 || time: 0.5392 sec/iter
+[renew_634]	iter 57 || Loss: 12.6525 || time: 0.5507 sec/iter
+[renew_634]	iter 58 || Loss: 11.3310 || time: 0.5536 sec/iter
+[renew_634]	iter 59 || Loss: 25.4891 || time: 0.5480 sec/iter
+[renew_634]	iter 60 || Loss: 18.8482 || time: 0.5374 sec/iter
+[renew_634]	iter 61 || Loss: 14.4570 || time: 0.5419 sec/iter
+[renew_634]	iter 62 || Loss: 13.5245 || time: 0.5514 sec/iter
+[renew_634]	iter 63 || Loss: 13.3415 || time: 0.5521 sec/iter
+[renew_634]	iter 64 || Loss: 14.0320 || time: 0.5401 sec/iter
+[renew_634]	iter 65 || Loss: 14.7708 || time: 0.5465 sec/iter
+[renew_634]	iter 66 || Loss: 13.7603 || time: 0.5385 sec/iter
+[renew_634]	iter 67 || Loss: 16.5602 || time: 0.5531 sec/iter
+[renew_634]	iter 68 || Loss: 15.4590 || time: 0.5527 sec/iter
+[renew_634]	iter 69 || Loss: 16.2785 || time: 0.5510 sec/iter
+[renew_634]	iter 70 || Loss: 18.9492 || time: 0.5382 sec/iter

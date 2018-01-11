@@ -1,0 +1,39 @@
+------------ Options -------------
+conf_thresh: 0.005
+cuda: True
+experiment_name: renew_512_set2
+log_file_name: result/renew_512_set2/test/final_v2.pth_soft_nms/opt_test_result.txt
+nms_thresh: 0.45
+phase: test
+prior_config: v2_512
+save_folder: result/renew_512_set2/test/final_v2.pth_soft_nms
+soft_nms: 1
+ssd_dim: 512
+sub_folder_suffix: soft_nms
+top_k: 300
+trained_model: result/renew_512_set2/train/final_v2.pth
+voc_root: /home/hongyang/data/VOCdevkit/
+-------------- End ----------------
+
+================ Result ================
+AP for aeroplane = 0.8036
+AP for bicycle = 0.8419
+AP for bird = 0.7701
+AP for boat = 0.7015
+AP for bottle = 0.5668
+AP for bus = 0.8641
+AP for car = 0.8774
+AP for cat = 0.8775
+AP for chair = 0.6223
+AP for cow = 0.8233
+AP for diningtable = 0.7582
+AP for dog = 0.8586
+AP for horse = 0.8722
+AP for motorbike = 0.8291
+AP for person = 0.7863
+AP for pottedplant = 0.5235
+AP for sheep = 0.7672
+AP for sofa = 0.7907
+AP for train = 0.8747
+AP for tvmonitor = 0.7718
+Mean AP = 0.7790

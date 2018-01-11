@@ -1,0 +1,23 @@
+------------ Options -------------
+conf_thresh: 0.003
+cuda: True
+dataset: voc
+display_id: 1
+experiment_name: renew_512_set2
+log_file_name: result/renew_512_set2/test/opt_test_result.txt
+nms_thresh: 0.5
+phase: test
+port_id: 8097
+prior_config: v2_512
+save_folder: result/renew_512_set2/test
+send_images_to_visdom: False
+show_freq: 10
+soft_nms: 1
+ssd_dim: 512
+sub_folder_suffix: sft_set1
+top_k: 500
+trained_model: result/renew_512_set2/train/final_v2.pth
+visdom: False
+-------------- End ----------------
+
+================ Result ================
