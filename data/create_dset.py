@@ -1,9 +1,6 @@
 import os
-from ..data.augmentations import SSDAugmentation
-from ..data import AnnotationTransform, BaseTransform
-import torchvision.datasets as dset
-import torchvision.transforms as T
-import torch
+from .augmentations import SSDAugmentation
+from data import BaseTransform, AnnotationTransform
 
 
 def create_dataset(opts, phase=None):

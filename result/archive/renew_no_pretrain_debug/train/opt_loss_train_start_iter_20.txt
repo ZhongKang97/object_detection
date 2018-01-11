@@ -1,0 +1,44 @@
+------------ Options -------------
+basenet: vgg16_reducedfc.pth
+batch_size: 16
+cuda: True
+display_id: 1
+gamma: 0.1
+gpu_id: 0,1
+iterations: 130000
+jaccard_threshold: 0.5
+lr: 0.0001
+momentum: 0.9
+no_pretrain: True
+num_workers: 2
+phase: train
+port_id: 8097
+resume: result/renew_no_pretrain_debug/train/ssd300_0712_iter_20.pth
+save_folder: result/renew_no_pretrain_debug/train
+schedule: [80000, 100000, 120000]
+send_images_to_visdom: False
+ssd_dim: 300
+start_iter: 20
+version: v2
+visdom: False
+voc_root: /home/hongyang/data/VOCdevkit/
+weight_decay: 0.0005
+-------------- End ----------------
+================ Training Loss (Thu Sep  7 14:14:24 2017) ================
+iter 20 || Loss: 15.3368 || time: 25.1465 sec/iter
+iter 25 || Loss: 15.4473 || time: 0.1561 sec/iter
+iter 30 || Loss: 15.1598 || time: 0.1464 sec/iter
+iter 35 || Loss: 15.9879 || time: 0.1466 sec/iter
+iter 40 || Loss: 15.4581 || time: 0.1463 sec/iter
+iter 45 || Loss: 14.9898 || time: 0.1479 sec/iter
+iter 50 || Loss: 15.1514 || time: 0.1538 sec/iter
+iter 55 || Loss: 14.9941 || time: 0.1623 sec/iter
+iter 60 || Loss: 14.9193 || time: 0.1485 sec/iter
+iter 65 || Loss: 14.9974 || time: 0.1711 sec/iter
+iter 70 || Loss: 14.6296 || time: 0.1498 sec/iter
+iter 75 || Loss: 14.6416 || time: 0.1487 sec/iter
+iter 80 || Loss: 14.8832 || time: 0.1551 sec/iter
+iter 85 || Loss: 14.9538 || time: 0.1475 sec/iter
+iter 90 || Loss: 15.4130 || time: 0.1498 sec/iter
+iter 95 || Loss: 14.3755 || time: 0.1648 sec/iter
+iter 100 || Loss: 14.3495 || time: 0.1617 sec/iter

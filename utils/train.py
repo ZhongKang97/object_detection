@@ -1,5 +1,5 @@
 import torch.optim as optim
-from object_detection.utils.util import *
+from .util import *
 from torch.optim.lr_scheduler import ReduceLROnPlateau, \
     ExponentialLR, MultiStepLR, StepLR, LambdaLR
 

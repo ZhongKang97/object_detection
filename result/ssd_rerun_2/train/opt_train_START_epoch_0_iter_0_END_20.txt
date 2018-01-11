@@ -1,14 +1,14 @@
-Experiment: ssd_rerun
+Experiment: ssd_rerun_2
 ------------ Training Options -------------
 base_save_folder: result
-batch_size: 4
+batch_size: 32
 beta1: 0.9
 dataset: coco
-debug_mode: True
-experiment_name: ssd_rerun
-file_name: result/ssd_rerun/train/opt_train_START_epoch_0_iter_0_END_20.txt
+debug_mode: False
+experiment_name: ssd_rerun_2
+file_name: result/ssd_rerun_2/train/opt_train_START_epoch_0_iter_0_END_20.txt
 gamma: 0.1
-loss_freq: 10
+loss_freq: 200
 lr: 0.0001
 manual_seed: -1
 max_epoch: 20
@@ -16,15 +16,15 @@ momentum: 0.9
 no_pretrain: False
 no_visdom: False
 num_workers: 2
-optim: rmsprop
+optim: sgd
 phase: train
 port_id: 8090
 pretrain_model: vgg16_reducedfc.pth
 prior_config: v2_512
-random_seed: 8328
-resume: None
-save_folder: result/ssd_rerun/train/
-save_freq: 10
+random_seed: 7210
+resume: ssd_rerun_2/train/ssd512_COCO_epoch_15_iter_3695
+save_folder: result/ssd_rerun_2/train/
+save_freq: 5
 schedule: [6, 12, 16]
 scheduler: None
 ssd_dim: 512
@@ -36,5 +36,3 @@ weight_decay: 0.0005
 
 init learning rate 0.000100 at epoch 0, iter 0
 
-[ssd_rerun]	epoch/iter [0/20][0/29571] ||	Loss: 28.4929, loc: 4.0656, cls: 24.4273 ||	Time: 1.2988 sec/image
-Saving state at epoch/iter [0/20][0/29571] ...

@@ -2,12 +2,12 @@ import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ..utils.train import *
-from ..option.config import *
-from .models.models import *
-from .modules.prior_box import PriorBox
-from .modules.l2norm import L2Norm
-from .detection import Detect
+from utils.train import *
+from option.config import *
+from layers.models.models import *
+from layers.modules.prior_box import PriorBox
+from layers.modules.l2norm import L2Norm
+from layers.detection import Detect
 
 
 def build_ssd(opts, num_classes):

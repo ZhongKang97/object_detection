@@ -1,0 +1,132 @@
+Experiment: ssd_rerun_2
+------------ Test Options -----------------
+base_save_folder: result
+conf_thresh: 0.05
+dataset: coco
+det_file: result/ssd_rerun_2/test/ssd512_COCO_epoch_15_iter_3695/detections_all_boxes.pkl
+experiment_name: ssd_rerun_2
+file_name: result/ssd_rerun_2/test/ssd512_COCO_epoch_15_iter_3695/opt_test.txt
+manual_seed: -1
+nms_thresh: 0.5
+no_visdom: False
+num_workers: 2
+phase: test
+port_id: 8090
+prior_config: v2_512
+random_seed: 9643
+save_folder: result/ssd_rerun_2/test/ssd512_COCO_epoch_15_iter_3695
+show_freq: 50
+soft_nms: -1
+ssd_dim: 512
+subname: 
+top_k: 300
+trained_model: result/ssd_rerun_2/train/ssd512_COCO_epoch_15_iter_3695.pth
+use_cuda: True
+visualize_thres: 0.2
+------------------ End --------------------
+
+Raw boxes exist! skip prediction and directly evaluate!
+
+Evaluating detection results ...
+
+Writing results in json format to result/ssd_rerun_2/test/ssd512_COCO_epoch_15_iter_3695/detections_all_boxes.json ...
+
+~~~~ Mean and per-category AP @ IoU=[0.50,0.95] ~~~~
+Mean AP: 4.39
+
+person:		17.43
+bicycle:		1.50
+car:		7.26
+motorcycle:		6.35
+airplane:		5.99
+bus:		13.02
+train:		8.61
+truck:		3.59
+boat:		0.66
+traffic light:		1.05
+fire hydrant:		5.14
+stop sign:		14.71
+parking meter:		1.21
+bench:		1.04
+bird:		1.96
+cat:		11.80
+dog:		8.66
+horse:		9.71
+sheep:		6.84
+cow:		7.67
+elephant:		10.30
+bear:		9.33
+zebra:		24.87
+giraffe:		19.96
+backpack:		0.25
+umbrella:		3.67
+handbag:		0.02
+tie:		1.82
+suitcase:		1.28
+frisbee:		3.64
+skis:		0.99
+snowboard:		0.00
+sports ball:		2.52
+kite:		1.07
+baseball bat:		0.23
+baseball glove:		0.27
+skateboard:		2.50
+surfboard:		2.03
+tennis racket:		3.76
+bottle:		2.16
+wine glass:		0.29
+cup:		4.39
+fork:		0.10
+knife:		0.01
+spoon:		0.01
+bowl:		7.41
+banana:		0.66
+apple:		0.41
+sandwich:		3.10
+orange:		6.61
+broccoli:		1.31
+carrot:		0.24
+hot dog:		0.43
+pizza:		14.24
+donut:		1.95
+cake:		1.98
+chair:		1.84
+couch:		4.32
+potted plant:		0.63
+bed:		3.34
+dining table:		9.29
+toilet:		13.58
+tv:		14.85
+laptop:		4.37
+mouse:		0.00
+remote:		0.00
+keyboard:		2.03
+cell phone:		1.29
+microwave:		3.49
+oven:		1.54
+toaster:		0.00
+sink:		2.42
+refrigerator:		0.29
+book:		0.48
+clock:		14.26
+vase:		2.33
+scissors:		0.00
+teddy bear:		2.94
+hair drier:		0.00
+toothbrush:		0.00
+
+~~~~ Summary metrics ~~~~
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.044
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.099
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.033
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.007
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.070
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.066
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.077
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.131
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.143
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.010
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.152
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.234
+
+Hurray! Testing done!

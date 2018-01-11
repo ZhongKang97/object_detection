@@ -15,8 +15,8 @@ from PIL import Image, ImageDraw, ImageFont
 #TODO: replace cv2 usage
 import cv2
 import numpy as np
-from ..utils.util import ET
 from scipy.misc import imread
+from utils.util import ET       # for current repo
 
 VOC_CLASSES = (
     'aeroplane', 'bicycle', 'bird', 'boat',

@@ -1,0 +1,33 @@
+------------ Options -------------
+basenet: vgg16_reducedfc.pth
+batch_size: 16
+cuda: True
+dataset: coco
+debug: False
+deploy: True
+display_id: 1
+experiment_name: ssd_base_101
+gamma: 0.5
+loss_freq: 50
+lr: 0.001
+max_iter: 200000
+momentum: 0.9
+no_pretrain: False
+num_workers: 2
+phase: train
+port_id: 8097
+prior_config: v2_512
+resume: None
+save_folder: result/ssd_base_101/train
+save_freq: 5000
+schedule: [100000, 140000, 160000]
+send_images_to_visdom: False
+ssd_dim: 512
+start_iter: 0
+version: v2
+visdom: False
+weight_decay: 0.0005
+-------------- End ----------------
+================ Training Loss (Tue Oct 31 21:11:33 2017) ================
+[ssd_base_101]	iter 0 || Loss: 29.8380 || time: 10.1723 sec/iter
+[ssd_base_101]	iter 50 || Loss: 12.8735 || time: 0.3723 sec/iter
