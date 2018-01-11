@@ -1,5 +1,5 @@
 import argparse
-from utils.util import *
+from ..utils.util import *
 import random
 
 

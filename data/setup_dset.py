@@ -12,10 +12,10 @@ import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 from PIL import Image, ImageDraw, ImageFont
-#TODO
+#TODO: replace cv2 usage
 import cv2
 import numpy as np
-from utils.util import ET
+from ..utils.util import ET
 from scipy.misc import imread
 
 VOC_CLASSES = (

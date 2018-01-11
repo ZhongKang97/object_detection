@@ -2,10 +2,10 @@ from __future__ import print_function
 from torch.autograd import Variable
 
 from data.create_dset import create_dataset
-from layers.ssd import build_ssd
-from option.test_opt import TestOptions
-from utils.eval import *
-from utils.visualizer import Visualizer
+from .layers.ssd import build_ssd
+from .option.test_opt import TestOptions
+from .utils.eval import *
+from .utils.visualizer import Visualizer
 
 option = TestOptions()
 option.setup_config()

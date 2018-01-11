@@ -22,12 +22,13 @@ class Visualizer(object):
             self.loss_data = {'X': [], 'Y': [], 'legend': ['total_loss', 'loss_c', 'loss_l']}
             # for visualization
             # TODO: visualize in the training process
-            self.num_classes = dataset.num_classes
-            self.class_name = dataset.COCO_CLASSES_names
-            self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()
-            # for both train and test
-            self.save_det_res_path = os.path.join(self.opt.save_folder, 'det_result')
-            mkdirs(self.save_det_res_path)
+            if hasattr(dataset, 'num_classes'):
+                self.num_classes = dataset.num_classes
+                self.class_name = dataset.COCO_CLASSES_names
+                self.color = plt.cm.hsv(np.linspace(0, 1, (self.num_classes-1))).tolist()
+                # for both train and test
+                self.save_det_res_path = os.path.join(self.opt.save_folder, 'det_result')
+                mkdirs(self.save_det_res_path)
 
     def plot_loss(self, errors, progress, others=None):
         """draw loss on visdom console"""

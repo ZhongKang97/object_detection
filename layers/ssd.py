@@ -2,8 +2,8 @@ import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from utils.train import *
-from option.config import *
+from ..utils.train import *
+from ..option.config import *
 from .models.models import *
 from .modules.prior_box import PriorBox
 from .modules.l2norm import L2Norm
@@ -48,14 +48,8 @@ def build_ssd(opts, num_classes):
         return model, (start_epoch, start_iter)
 
     elif phase == 'test':
-        checkpoint = torch.load(opts.trained_model)
+        model = set_model_weight_test(model, opts)
         model.eval()
-        try:
-            model.load_state_dict(checkpoint['state_dict'])
-        except KeyError:
-            weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
-            model.load_state_dict(weights)
-        print('Finished loading model in test phase!')
         if opts.use_cuda:
             model = model.cuda()
             cudnn.benchmark = True

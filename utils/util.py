@@ -48,10 +48,10 @@ def info(object, spacing=10, collapse=1):
     Takes module, class, list, dictionary, or string."""
     methodList = [e for e in dir(object) if isinstance(getattr(object, e), collections.Callable)]
     processFunc = collapse and (lambda s: " ".join(s.split())) or (lambda s: s)
-    print( "\n".join(["%s %s" %
+    print("\n".join(["%s %s" %
                      (method.ljust(spacing),
                       processFunc(str(getattr(object, method).__doc__)))
-                     for method in methodList]) )
+                     for method in methodList]))
 
 
 def varname(p):
@@ -157,12 +157,16 @@ def show_jot_opt(opt):
         by Hongyang.
         A starter for logging the training/test process
     """
-    if opt.phase == 'train':
+    if opt.phase == 'test':
+        file_name = os.path.join(opt.save_folder, 'opt_{:s}.txt'.format(opt.phase))
+    elif opt.phase == 'train':
         file_name = os.path.join(opt.save_folder,
                                  'opt_{:s}_START_epoch_{:d}_iter_{:d}_END_{:d}.txt'.format(
                                      opt.phase, opt.start_epoch, opt.start_iter, opt.max_epoch))
-    else:
-        file_name = os.path.join(opt.save_folder, 'opt_{:s}.txt'.format(opt.phase))
+    elif opt.phase == 'train_val':
+        file_name = os.path.join(opt.save_folder,
+                                 'opt_{:s}_START_epoch_0_END_{:d}.txt'.format(
+                                     opt.phase, opt.max_epoch))
 
     opt.file_name = file_name
     args = vars(opt)
@@ -205,3 +209,23 @@ def torch_summarize(model, show_weights=True, show_parameters=True):
 
     tmpstr = tmpstr + ')'
     return tmpstr
+
+
+class AverageMeter(object):
+    """Computes and stores the average and current value
+       Imported from https://github.com/pytorch/examples/blob/master/imagenet/main.py#L247-L262
+    """
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count

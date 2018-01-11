@@ -1,6 +1,7 @@
-from utils.util import *
-import torch
 import torch.optim as optim
+from object_detection.utils.util import *
+from torch.optim.lr_scheduler import ReduceLROnPlateau, \
+    ExponentialLR, MultiStepLR, StepLR, LambdaLR
 
 
 def adjust_learning_rate(optimizer, step, args):
@@ -19,6 +20,20 @@ def adjust_learning_rate(optimizer, step, args):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
+
+
+def set_lr_schedule(optimizer, plan, others=None):
+    scheduler = []
+    if plan == 'plateau':
+        scheduler = ReduceLROnPlateau(optimizer, 'max',
+                                      patience=25,
+                                      factor=0.7,
+                                      min_lr=0.00001)
+    elif plan == 'multi_step':
+        scheduler = MultiStepLR(optimizer,
+                                milestones=others['milestones'],
+                                gamma=others['gamma'])
+    return scheduler
 
 
 def save_model(progress, args, others):
@@ -88,3 +103,20 @@ def set_model_weight_train(model, opts):
             model.conf.apply(weights_init)
 
     return model, start_epoch, start_iter
+
+
+def set_model_weight_test(model, opts):
+
+    checkpoint = torch.load(opts.trained_model)
+    try:
+        # for small-scale datasets, capsule project
+        print('best test accu is: {:.4f}'.format(checkpoint['best_test_acc']))
+    except KeyError:
+        pass
+    try:
+        model.load_state_dict(checkpoint['state_dict'])
+    except KeyError:
+        weights = collections.OrderedDict([(k[7:], v) for k, v in checkpoint['state_dict'].items()])
+        model.load_state_dict(weights)
+    print('Finished loading model in test phase!')
+    return model
