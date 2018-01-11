@@ -1,6 +1,6 @@
 import os
-from data.augmentations import SSDAugmentation
-from data import AnnotationTransform, BaseTransform
+from ..data.augmentations import SSDAugmentation
+from ..data import AnnotationTransform, BaseTransform
 import torchvision.datasets as dset
 import torchvision.transforms as T
 import torch

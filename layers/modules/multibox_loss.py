@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-
 from option.config import v2 as cfg
 from utils.box_utils import match, log_sum_exp
 
