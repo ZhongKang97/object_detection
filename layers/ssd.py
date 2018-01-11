@@ -2,7 +2,7 @@ import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from ..utils.train import *
+from utils.train import *
 from ..option.config import *
 from .models.models import *
 from .modules.prior_box import PriorBox
