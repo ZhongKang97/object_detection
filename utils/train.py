@@ -25,7 +25,7 @@ def adjust_learning_rate(optimizer, step, args):
 def set_lr_schedule(optimizer, plan, others=None):
     scheduler = []
     if plan == 'plateau':
-        scheduler = ReduceLROnPlateau(optimizer, 'max',
+        scheduler = ReduceLROnPlateau(optimizer, 'min',
                                       patience=25,
                                       factor=0.7,
                                       min_lr=0.00001)
@@ -49,6 +49,27 @@ def save_model(progress, args, others):
                 'iter': iter_ind,
     }, '{:s}/{:s}ssd{:d}_{:s}_epoch_{:d}_iter_{:d}.pth'.format(
         args.save_folder, prefix, args.ssd_dim, dataset.name, epoch, iter_ind))
+
+
+def _remove_batch(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            remove(os.path.join(dir, f))
+
+
+def save_checkpoint(state, is_best, args, epoch):
+    # for the capsule project
+    filepath = os.path.join(args.save_folder, 'epoch_{:d}.pth'.format(epoch+1))
+    if (epoch+1) % args.save_epoch == 0 \
+            or epoch == 0 or (epoch+1) == args.max_epoch:
+        torch.save(state, filepath)
+        print_log('model saved at {:s}'.format(filepath), args.file_name)
+    if is_best:
+        # save the best model
+        _remove_batch(args.save_folder, 'model_best')
+        best_path = os.path.join(args.save_folder, 'model_best_at_epoch_{:d}.pth'.format(epoch+1))
+        torch.save(state, best_path)
+        print_log('best model saved at {:s}'.format(best_path), args.file_name)
 
 
 def set_optimizer(net, opt):
