@@ -106,10 +106,11 @@ class Visualizer(object):
 
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         try:
-            still_run, lr, time_per_iter, test_acc, best_acc, best_epoch = \
-                others[0], others[1], others[2], others[3], others[4], others[5]
-            show_best = 'curr test error: {:.4f}<br/>best test error: {:.4f} at epoch {:3d}<br/>'.format(
-                test_acc, best_acc, best_epoch)
+            still_run, lr, time_per_iter, test_acc, best_acc, best_epoch, param_num = \
+                others[0], others[1], others[2], others[3], others[4], others[5], others[6]
+            show_best = 'curr test error: {:.4f}<br/>best test error: {:.4f} at epoch {:3d}<br/>' \
+                        'param_num: {:.4f} Mb<br/>'.format(
+                test_acc, best_acc, best_epoch, param_num)
             self.opt.start_epoch, self.opt.start_iter = 0, 0    # for compatibility
             self.opt.batch_size = self.opt.batch_size_train
         except:
@@ -130,8 +131,11 @@ class Visualizer(object):
                     left_time, time_per_iter/self.opt.batch_size,
                     show_best)
         common_suffix = '<br/><br/>-----------<br/>batch_size: {:d}<br/>' \
-                        'optim: {:s}<br/>'.format(
-                            self.opt.batch_size, self.opt.optim)
+                        'optim: {:s}<br/>' \
+                        'loss type: {:s}<br/>'.format(
+                            self.opt.batch_size,
+                            self.opt.optim,
+                            self.opt.loss_form)
 
         msg = 'phase: {:s}<br/>status: <b>{:s}</b><br/>'.format(self.opt.phase, status)\
               + dynamic + common_suffix

@@ -186,6 +186,7 @@ def show_jot_opt(opt):
 def torch_summarize(model, show_weights=True, show_parameters=True):
     """Summarizes torch model by showing trainable parameters and weights."""
     tmpstr = model.__class__.__name__ + ' (\n'
+    params_num = 0
     for key, module in model._modules.items():
         # if it contains layers let call it recursively to get params and weights
         if type(module) in [
@@ -195,10 +196,18 @@ def torch_summarize(model, show_weights=True, show_parameters=True):
             modstr = torch_summarize(module)
         else:
             modstr = module.__repr__()
-        modstr = _addindent(modstr, 2)
+
+        if isinstance(modstr, str):
+            modstr = _addindent(modstr, 2)
+        elif isinstance(modstr, tuple):
+            modstr = _addindent(modstr[0], 2)
 
         params = sum([np.prod(p.size()) for p in module.parameters()])
         weights = tuple([tuple(p.size()) for p in module.parameters()])
+
+        # rest = b if b > 0 else params
+        # params_num = params_num + rest
+        params_num += params
 
         tmpstr += '  (' + key + '): ' + modstr
         if show_weights:
@@ -208,7 +217,7 @@ def torch_summarize(model, show_weights=True, show_parameters=True):
         tmpstr += '\n'
 
     tmpstr = tmpstr + ')'
-    return tmpstr
+    return tmpstr, params_num * 4. / (1024**2)
 
 
 class AverageMeter(object):
