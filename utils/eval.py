@@ -1,5 +1,6 @@
 import pickle
 from .util import *
+
 try:
     from data.setup_dset import VOC_CLASSES as labelmap
 except ModuleNotFoundError:
@@ -7,7 +8,7 @@ except ModuleNotFoundError:
 import json
 
 
-def accuracy(output, target, topk=(1,)):
+def accuracy(output, target, topk=(1,), acc_per_cls=None):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
     batch_size = target.size(0)
@@ -20,7 +21,19 @@ def accuracy(output, target, topk=(1,)):
     for k in topk:
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
-    return res
+
+    if acc_per_cls is not None:
+        target_min, target_max = target.min(), target.max()
+        for i in range(target_min, target_max + 1):
+            acc_per_cls['top1'][i, 1] += sum(target == i)
+            acc_per_cls['top5'][i, 1] += sum(target == i)
+
+            _check = correct[:1].sum(dim=0)
+            acc_per_cls['top1'][i, 0] += sum(_check[target == i])
+            _check = correct[:5].sum(dim=0)
+            acc_per_cls['top5'][i, 0] += sum(_check[target == i])
+
+    return res, acc_per_cls
 
 
 def _parse_rec(filename):
@@ -57,7 +70,6 @@ def _parse_rec(filename):
 
 
 def _get_voc_results_file_template(save_folder, image_set, cls):
-
     filename = 'det_' + image_set + '_%s.txt' % (cls)
     filedir = os.path.join(save_folder, 'detection_per_cls')
     if not os.path.exists(filedir):
@@ -68,7 +80,7 @@ def _get_voc_results_file_template(save_folder, image_set, cls):
 
 
 def _voc_eval(detpath, annopath, imagesetfile, classname,
-             cachedir, ovthresh=0.5, use_07_metric=True):
+              cachedir, ovthresh=0.5, use_07_metric=True):
     """
     Top level function that does the PASCAL VOC evaluation.
     detpath:            Path to detections, detpath.format(classname) should produce the detection results file.
@@ -98,7 +110,7 @@ def _voc_eval(detpath, annopath, imagesetfile, classname,
             recs[imagename] = _parse_rec(annopath % (imagename))
             if i % 100 == 0:
                 print('Reading annotation for {:d}/{:d}'.format(
-                   i + 1, len(imagenames)))
+                    i + 1, len(imagenames)))
         # save
         print('Saving cached annotations to {:s}'.format(cachefile))
         with open(cachefile, 'wb') as f:
@@ -231,7 +243,7 @@ def write_voc_results_file(save_folder, all_boxes, dataset):
         filename = _get_voc_results_file_template(save_folder, set_type, cls)
         with open(filename, 'wt') as f:
             for im_ind, index in enumerate(dataset.ids):
-                dets = all_boxes[cls_ind+1][im_ind]
+                dets = all_boxes[cls_ind + 1][im_ind]
                 if dets == []:
                     continue
                 # the VOCdevkit expects 1-based indices
@@ -243,7 +255,6 @@ def write_voc_results_file(save_folder, all_boxes, dataset):
 
 
 def do_python_eval(opts):
-
     prefix = opts.save_folder
     log_file_name = opts.log_file_name
     save_folder = opts.save_folder
@@ -278,17 +289,17 @@ def do_python_eval(opts):
 
         print('Mean AP = {:.4f}'.format(np.mean(aps)))
         log_file.write('Mean AP = {:.4f}\n'.format(np.mean(aps)))
-    # print('~~~~~~~~')
-    # print('Results:')
-    # for ap in aps:
-    #     print('{:.3f}'.format(ap))
-    # print('{:.3f}'.format(np.mean(aps)))
-    # print('~~~~~~~~')
-    # print('')
-    # print('--------------------------------------------------------------')
-    # print('Results computed with the **unofficial** Python eval code.')
-    # print('Results should be very close to the official MATLAB eval code.')
-    # print('--------------------------------------------------------------')
+        # print('~~~~~~~~')
+        # print('Results:')
+        # for ap in aps:
+        #     print('{:.3f}'.format(ap))
+        # print('{:.3f}'.format(np.mean(aps)))
+        # print('~~~~~~~~')
+        # print('')
+        # print('--------------------------------------------------------------')
+        # print('Results computed with the **unofficial** Python eval code.')
+        # print('Results should be very close to the official MATLAB eval code.')
+        # print('--------------------------------------------------------------')
 
 
 ########### COCO ###########
@@ -312,7 +323,7 @@ def _coco_results_one_category(dataset, boxes, cat_id):
                             'category_id': cat_id,
                             'bbox': [xs[k], ys[k], ws[k], hs[k]],
                             'score': scores[k]
-                        } for k in range(dets.shape[0])])       # k is the isntance number
+                        } for k in range(dets.shape[0])])  # k is the isntance number
     return results
 
 
@@ -328,12 +339,12 @@ def write_coco_results_file(dataset, all_boxes, args):
     else:
         results = []
         for cls_ind, cls in enumerate(dataset.COCO_CLASSES_names):
-            if cls == '__background__':     # we don't have this case
+            if cls == '__background__':  # we don't have this case
                 continue
             # print('Collecting {} results ({:d}/{:d})'.format(cls, cls_ind, dataset.num_classes - 2))
             coco_cat_id = dataset.COCO_CLASSES[cls_ind]
             results.extend(
-                _coco_results_one_category(dataset, all_boxes[cls_ind+1], coco_cat_id))
+                _coco_results_one_category(dataset, all_boxes[cls_ind + 1], coco_cat_id))
 
         print_log('\nWriting results in json format to {} ...\n'.format(res_file), args.file_name)
         with open(res_file, 'w') as fid:
@@ -341,7 +352,6 @@ def write_coco_results_file(dataset, all_boxes, args):
 
 
 def coco_do_detection_eval(dataset, args):
-
     res_file = args.det_file[:-3] + 'json'
     ann_type = 'bbox'
     coco_dt = dataset.coco.loadRes(res_file)
@@ -379,7 +389,7 @@ def _print_detection_eval_metrics(dataset, coco_eval, args):
     mAP = 100 * ap_default
 
     print_log('~~~~ Mean and per-category AP @ IoU=[{:.2f},{:.2f}] ~~~~'.
-          format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
+              format(IoU_lo_thresh, IoU_hi_thresh), args.file_name)
     print_log('[{:s}][{:s}]\nMean AP: {:.2f}\n'.format(
         args.experiment_name,
         os.path.basename(os.path.dirname(args.det_file)), mAP,
@@ -405,11 +415,12 @@ def _summarize_only_to_log(api, args):
         Note by hyli: only to log in the file when printing. Exactly the same as official.
         'cocoeval.py'
     """
+
     def _summarize(ap=1, iouThr=None, areaRng='all', maxDets=100):
         p = api.params
         iStr = ' {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.2f}'
         titleStr = 'Average Precision' if ap == 1 else 'Average Recall'
-        typeStr = '(AP)' if ap==1 else '(AR)'
+        typeStr = '(AP)' if ap == 1 else '(AR)'
         iouStr = '{:0.2f}:{:0.2f}'.format(p.iouThrs[0], p.iouThrs[-1]) \
             if iouThr is None else '{:0.2f}'.format(iouThr)
 
@@ -422,20 +433,20 @@ def _summarize_only_to_log(api, args):
             if iouThr is not None:
                 t = np.where(iouThr == p.iouThrs)[0]
                 s = s[t]
-            s = s[:,:,:,aind,mind]
+            s = s[:, :, :, aind, mind]
         else:
             # dimension of recall: [TxKxAxM]
             s = api.eval['recall']
             if iouThr is not None:
                 t = np.where(iouThr == p.iouThrs)[0]
                 s = s[t]
-            s = s[:,:,aind,mind]
-        if len(s[s>-1])==0:
+            s = s[:, :, aind, mind]
+        if len(s[s > -1]) == 0:
             mean_s = -1
         else:
-            mean_s = np.mean(s[s>-1])
+            mean_s = np.mean(s[s > -1])
         print_log(
-            iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s*100),
+            iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s * 100),
             args.file_name)
         return mean_s
 
@@ -468,6 +479,7 @@ def _summarize_only_to_log(api, args):
         stats[8] = _summarize(0, maxDets=20, areaRng='medium')
         stats[9] = _summarize(0, maxDets=20, areaRng='large')
         return stats
+
     if not api.eval:
         raise Exception('Please run accumulate() first')
     iouType = api.params.iouType
