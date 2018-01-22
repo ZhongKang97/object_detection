@@ -174,8 +174,10 @@ def show_jot_opt(opt):
     print_log('Experiment: {:s}'.format(opt.experiment_name), file_name, init=True)
     if opt.phase == 'train':
         print_log('------------ Training Options -------------', file_name)
-    else:
+    elif opt.phase == 'test':
         print_log('------------ Test Options -----------------', file_name)
+    elif opt.phase == 'train_val':
+        print_log('------------ Train and Test Options -----------------', file_name)
 
     for k, v in sorted(args.items()):
         print_log('%s: %s' % (str(k), str(v)), file_name)
