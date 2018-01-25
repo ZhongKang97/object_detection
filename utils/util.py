@@ -9,6 +9,7 @@ import time
 import collections
 import torch.nn as nn
 import sys
+import math
 from torch.nn.modules.module import _addindent
 
 if sys.version_info[0] == 2:
@@ -98,8 +99,18 @@ def weights_init(m):
     """
         init random weights
     """
-    if isinstance(m, nn.Conv2d):
-        nn.init.xavier_normal(m.weight.data)
+    # if isinstance(m, nn.Conv2d):
+    #     nn.init.xavier_normal(m.weight.data)
+    #     m.bias.data.zero_()
+    if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+        n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+        m.weight.data.normal_(0, math.sqrt(2. / n))
+    elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.InstanceNorm2d):
+        m.weight.data.fill_(1)
+        m.bias.data.zero_()
+    elif isinstance(m, nn.Linear):
+        # print('linear layer!')
+        m.weight.data.normal_(std=0.05)
         m.bias.data.zero_()
 
 

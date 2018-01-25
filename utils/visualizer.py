@@ -106,11 +106,11 @@ class Visualizer(object):
 
         epoch, iter_ind, epoch_size = progress[0], progress[1], progress[2]
         try:
-            still_run, lr, time_per_iter, test_acc, best_acc, best_epoch, param_num = \
-                others[0], others[1], others[2], others[3], others[4], others[5], others[6]
+            still_run, lr, time_per_iter, test_acc, best_acc, best_epoch, param_num, total_time = \
+                others[0], others[1], others[2], others[3], others[4], others[5], others[6], others[7]
             show_best = 'curr test error: {:.4f}<br/>best test error: {:.4f} at epoch {:3d}<br/>' \
                         'param_num: {:.4f} Mb<br/>'.format(
-                test_acc, best_acc, best_epoch, param_num)
+                            test_acc, best_acc, best_epoch, param_num)
             self.opt.start_epoch, self.opt.start_iter = 0, 0    # for compatibility
             self.opt.batch_size = self.opt.batch_size_train
         except:
@@ -130,12 +130,16 @@ class Visualizer(object):
                     epoch, self.opt.max_epoch, iter_ind, epoch_size,
                     left_time, time_per_iter/self.opt.batch_size,
                     show_best)
-        common_suffix = '<br/><br/>-----------<br/>batch_size: {:d}<br/>' \
+        total_t_str = '' if still_run else 'total_time: {:.4f} hrs<br/>'.format(total_time)
+        common_suffix = '<br/><br/>-----------<br/>' \
+                        'batch_size: {:d}<br/>' \
                         'optim: {:s}<br/>' \
-                        'loss type: {:s}<br/>'.format(
+                        'loss type: {:s}<br/>' \
+                        'device_id: {:s}<br/>'.format(
                             self.opt.batch_size,
                             self.opt.optim,
-                            self.opt.loss_form)
+                            self.opt.loss_form,
+                            self.opt.device_id) + total_t_str
 
         msg = 'phase: {:s}<br/>status: <b>{:s}</b><br/>'.format(self.opt.phase, status)\
               + dynamic + common_suffix
