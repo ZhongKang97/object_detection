@@ -108,7 +108,7 @@ class Visualizer(object):
         try:
             still_run, lr, time_per_iter, test_acc, best_acc, best_epoch, param_num, total_time = \
                 others[0], others[1], others[2], others[3], others[4], others[5], others[6], others[7]
-            show_best = 'curr test error: {:.4f}<br/>best test error: {:.4f} at epoch {:3d}<br/>' \
+            show_best = 'curr test error: {:.4f}<br/>best test error: <b>{:.4f}</b> at epoch {:3d}<br/>' \
                         'param_num: {:.4f} Mb<br/>'.format(
                             test_acc, best_acc, best_epoch, param_num)
             self.opt.start_epoch, self.opt.start_iter = 0, 0    # for compatibility
@@ -217,8 +217,8 @@ class Visualizer(object):
 #     random_batch_index = np.random.randint(images.size(0))
 #     args.vis.image(images.data[random_batch_index].cpu().numpy())
 
-# TODO: to check here
     def plot_hist(self, stats_data, info, all_sample=False):
+        # TODO: complete the histogram visualization
         target_suffix = 'target' if info['target'] is True else 'non_target'
         title_suffix = 'batch_id={:d} Model: {:s}, {:s}'.format(
             info['curr_iter'],
